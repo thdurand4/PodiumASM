@@ -1,0 +1,9 @@
+#IDE
+.idea
+.project
+.pydevproject
+.settings/
+venv
+
+# snakemake
+.snakemake
