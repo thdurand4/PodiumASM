@@ -10,6 +10,7 @@ fasta_renamed_dir = config["dir_assemblies_renamed"]
 tapestry_dir = config["tapestry_dir"]
 long_reads_dir = config["long_reads"]
 minimap_dir = config["minimap2_dir"]
+log_dir = config["log_dir"]
 
 
 def get_threads(rule, default):
@@ -36,12 +37,15 @@ rule finale:
     input:
         #dotplot_list = expand("{samples}.Assemblytics.Dotplot_filtered.png", samples = ASSEMBLIES),
         #fasta_masked_list = expand(output_dir + "{samples}.fasta.masked", samples = ASSEMBLIES),
-        final_fasta = expand("{samples}_masked.fasta", samples = ASSEMBLIES),
+        #final_fasta = expand("{samples}_masked.fasta", samples = ASSEMBLIES),
         fasta_renamed = expand("{samples}_renamed.fasta", samples = ASSEMBLIES),
-        tapestry_files = expand(tapestry_dir + "{samples}/" + "{samples}.tapestry_report.html", samples = ASSEMBLIES),
+        #tapestry_files = expand(tapestry_dir + "{samples}/" + "{samples}.tapestry_report.html", samples = ASSEMBLIES),
         bam_sorted_files = expand(minimap_dir + "{samples}_sorted.bam", samples = ASSEMBLIES),
         bam_indexes = expand(minimap_dir + "{samples}_sorted.bam.bai", samples = ASSEMBLIES),
-        vcf_list = expand(minimap_dir + "{samples}.vcf", samples = ASSEMBLIES)
+        vcf_list = expand(minimap_dir + "{samples}.vcf", samples = ASSEMBLIES),
+	    quast_final_results = f"{output_dir}QUAST/report.pdf",
+	    busco_final_results = expand(f"{output_dir}BUSCO/result_busco/{{samples}}.fasta/short_summary.specific.sordariomycetes_odb10.{{samples}}.fasta.txt",samples=ASSEMBLIES),
+        figure_final = f"{output_dir}BUSCO/result_busco/busco_summaries/busco_figure.png"
 
 rule rename_contigs:
     threads:1
@@ -73,23 +77,56 @@ rule quast_full_contigs:
             quast_results = f"{output_dir}QUAST/report.pdf"
     params:
         dir = directory(f"{output_dir}QUAST/")
+    log :
+            error =  f'{log_dir}error.e',
+            output = f'{log_dir}out.o'
     message:
             f"""
              Running {{rule}}
                 Input:
                     - Fasta : {{input.fasta}}
-                    - Ref : {{input.ref}}
+                    - Ref : {{input.reference}}
                 Output:
                     - sa_file: {{output.quast_results}}
                 Others
                     - Threads : {{threads}}
             """
     envmodules:
-            "quast_local"
-            "circos/0.69.8"
+            "quast/5.0.2"
     shell:
             """
-                quast.py {input.fasta} --circos -m 3000 -t 6 --fragmented -r {input.reference} -o {params.dir}
+                quast.py {input.fasta} -m 3000 -t 6 --fragmented -r {input.reference} -o {params.dir}
+            """
+rule busco:
+    """make quast report for our strain assembly"""
+    threads: get_threads("busco", 8)
+    input:
+            fasta = fasta_dir
+    output:
+            busco_out = expand(f"{output_dir}BUSCO/result_busco/{{samples}}.fasta/short_summary.specific.sordariomycetes_odb10.{{samples}}.fasta.txt",samples=ASSEMBLIES)
+    params:
+            busco_out_path = f"{output_dir}BUSCO/",
+            busco_result = f"result_busco"
+    log :
+            error =  f'{log_dir}busco/busco.e',
+            output = f'{log_dir}busco/busco.o'
+    message:
+            f"""
+             Running {{rule}}
+                Input:
+                    - Fasta : {{input.fasta}}
+                Output:
+                    - sa_file: {{output.busco_out}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            """
+    envmodules:
+            "busco/5.1.2"
+    shell:
+            """
+                busco -i {input.fasta} -l sordariomycetes_odb10 -m genome --out_path {params.busco_out_path} -o {params.busco_result} --download_path {params.busco_out_path}  -f 1>{log.output} 2>{log.error}
             """
 
 rule tapestry:
