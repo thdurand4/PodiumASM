@@ -13,3 +13,5 @@ long_reads: /shared/home/sbache/annotation_fusarium/fastq_guppy5/
 tapestry_dir: /shared/home/sbache/annotation_fusarium/assembly/snakemake_test/tapestry_output/
 
 minimap2_dir: /shared/home/sbache/annotation_fusarium/assembly/snakemake_test/minimap2/
+
+log_dir: /shared/home/sbache/annotation_fusarium/assembly/snakemake_test/logs/
