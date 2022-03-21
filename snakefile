@@ -35,7 +35,7 @@ ASSEMBLIES, = glob_wildcards(fasta_dir+"{samples}.fasta", followlinks=True)
 rule finale:
     input:
         #dotplot_list = expand("{samples}.Assemblytics.Dotplot_filtered.png", samples = ASSEMBLIES),
-        fasta_masked_list = expand(output_dir + "{samples}.fasta.masked", samples = ASSEMBLIES),
+        #fasta_masked_list = expand(output_dir + "{samples}.fasta.masked", samples = ASSEMBLIES),
         final_fasta = expand("{samples}_masked.fasta", samples = ASSEMBLIES),
         fasta_renamed = expand("{samples}_renamed.fasta", samples = ASSEMBLIES),
         tapestry_files = expand(tapestry_dir + "{samples}/" + "{samples}.tapestry_report.html", samples = ASSEMBLIES),
@@ -62,6 +62,35 @@ rule rename_contigs:
             """
     shell:
         "python function_rename.py {input.assembly} {output.file_renamed}"
+
+rule quast_full_contigs:
+    """make quast report for our strain assembly"""
+    threads: get_threads("quast_full_contigs", 6)
+    input:
+            fasta = expand("{samples}_renamed.fasta",samples = ASSEMBLIES),
+            reference = ref
+    output:
+            quast_results = f"{output_dir}QUAST/report.pdf"
+    params:
+        dir = directory(f"{output_dir}QUAST/")
+    message:
+            f"""
+             Running {{rule}}
+                Input:
+                    - Fasta : {{input.fasta}}
+                    - Ref : {{input.ref}}
+                Output:
+                    - sa_file: {{output.quast_results}}
+                Others
+                    - Threads : {{threads}}
+            """
+    envmodules:
+            "quast_local"
+            "circos/0.69.8"
+    shell:
+            """
+                quast.py {input.fasta} --circos -m 3000 -t 6 --fragmented -r {input.reference} -o {params.dir}
+            """
 
 rule tapestry:
     threads:3
