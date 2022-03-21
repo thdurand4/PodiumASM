@@ -30,14 +30,14 @@ def get_threads(rule, default):
     return default
 
 
-ASSEMBLIES, = glob_wildcards(fasta_dir+"{samples}_FLYE-STEP_CORRECTION_MEDAKA.fasta", followlinks=True)
+ASSEMBLIES, = glob_wildcards(fasta_dir+"{samples}.fasta", followlinks=True)
 
 rule finale:
     input:
         #dotplot_list = expand("{samples}.Assemblytics.Dotplot_filtered.png", samples = ASSEMBLIES),
         fasta_masked_list = expand(output_dir + "{samples}.fasta.masked", samples = ASSEMBLIES),
         final_fasta = expand("{samples}_masked.fasta", samples = ASSEMBLIES),
-        fasta_renamed = expand("{samples}.fasta", samples = ASSEMBLIES),
+        fasta_renamed = expand("{samples}_renamed.fasta", samples = ASSEMBLIES),
         tapestry_files = expand(tapestry_dir + "{samples}/" + "{samples}.tapestry_report.html", samples = ASSEMBLIES),
         bam_sorted_files = expand(minimap_dir + "{samples}_sorted.bam", samples = ASSEMBLIES),
         bam_indexes = expand(minimap_dir + "{samples}_sorted.bam.bai", samples = ASSEMBLIES),
@@ -46,9 +46,9 @@ rule finale:
 rule rename_contigs:
     threads:1
     input:
-        assembly = fasta_dir + "{samples}_FLYE-STEP_CORRECTION_MEDAKA.fasta"
+        assembly = fasta_dir + "{samples}.fasta"
     output:
-        file_renamed = "{samples}.fasta"
+        file_renamed = "{samples}_renamed.fasta"
     message:
             f"""
              Running {{rule}}
@@ -66,7 +66,7 @@ rule rename_contigs:
 rule tapestry:
     threads:3
     input:
-        assemblies = "{samples}.fasta",
+        assemblies = "{samples}_renamed.fasta",
         reads = long_reads_dir + "{samples}.fastq.gz"
     output:
         tapestry_report = tapestry_dir + "{samples}/" + "{samples}.tapestry_report.html"
@@ -90,7 +90,7 @@ rule mummer:
     """run mummer"""
     threads:1
     input:
-        fasta_file = "{samples}.fasta",
+        fasta_file = "{samples}_renamed.fasta",
         reference_file = ref
     params:
         prefix = "{samples}"
@@ -212,7 +212,7 @@ rule sniffles:
 rule repeatmasker:
     threads:1
     input:
-        fasta_file = "{samples}.fasta",
+        fasta_file = "{samples}_renamed.fasta",
         lib_file = lib_dir + "Fungi_all.fasta"
     params:
         directory = output_dir
@@ -238,7 +238,7 @@ rule remove_contigs:
     threads:1
     input:
         fasta_file_masked = output_dir + "{samples}.fasta.masked",
-        fasta = "{samples}.fasta"
+        fasta = "{samples}_renamed.fasta"
     output:
         final_files = "{samples}_masked.fasta"
     params:
