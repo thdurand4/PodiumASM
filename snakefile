@@ -95,7 +95,7 @@ rule quast_full_contigs:
             "quast/5.0.2"
     shell:
             """
-                quast.py {input.fasta} -m 3000 -t 6 --fragmented -r {input.reference} -o {params.dir}
+                quast {input.fasta} -m 3000 -t 6 --fragmented -r {input.reference} -o {params.dir}
             """
 rule busco:
     """make quast report for our strain assembly"""
