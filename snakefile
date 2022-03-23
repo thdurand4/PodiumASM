@@ -6,11 +6,10 @@ fasta_dir = config["DATA"]["ASSEMBLY"]
 ref = config["DATA"]["REFERENCE"]
 output_dir = config["DATA"]["OUTPUT"]
 db_busco = config["TOOLS_PARAM"]["BUSCO_DATABASE"]
-lib_dir = config["lib"]
+lib_dir = config["DATA"]["REPEAT_LIB"]
 fasta_renamed_dir = config["dir_assemblies_renamed"]
 tapestry_dir = config["tapestry_dir"]
-long_reads_dir = config["long_reads"]
-minimap_dir = config["minimap2_dir"]
+long_reads_dir = config["DATA"]["LONG_READS"]
 log_dir = f"{output_dir}LOGS/"
 
 
@@ -38,13 +37,10 @@ print(ASSEMBLIES)
 rule finale:
     input:
         #dotplot_list = expand("{samples}.Assemblytics.Dotplot_filtered.png", samples = ASSEMBLIES),
-        #fasta_masked_list = expand(output_dir + "{samples}.fasta.masked", samples = ASSEMBLIES),
-        #final_fasta = expand("{samples}_masked.fasta", samples = ASSEMBLIES),
+        final_fasta = expand(f"{output_dir}5_FINAL_FASTA/{{samples}}.fasta", samples = ASSEMBLIES),
         fasta_renamed = expand(f"{output_dir}1_FASTA_SORTED/{{samples}}.fasta",samples=ASSEMBLIES),
         #tapestry_files = expand(tapestry_dir + "{samples}/" + "{samples}.tapestry_report.html", samples = ASSEMBLIES),
-        #bam_sorted_files = expand(minimap_dir + "{samples}_sorted.bam", samples = ASSEMBLIES),
-        #bam_indexes = expand(minimap_dir + "{samples}_sorted.bam.bai", samples = ASSEMBLIES),
-        #vcf_list = expand(minimap_dir + "{samples}.vcf", samples = ASSEMBLIES),
+        vcf_list = expand(f"{output_dir}4_STRUCTURAL_VAR/sniffles/{{samples}}.vcf", samples = ASSEMBLIES),
 	    quast_final_results = f"{output_dir}2_GENOME_STATS/QUAST/report.pdf",
 	    busco_final_results = expand(f"{output_dir}2_GENOME_STATS/BUSCO/result_busco/{{samples}}.fasta/short_summary.specific.{db_busco}.{{samples}}.fasta.txt",samples=ASSEMBLIES),
         #figure_final = f"{output_dir}BUSCO/result_busco/busco_summaries/busco_figure.png"
@@ -213,21 +209,25 @@ rule assemblytics:
         "assemblytics/1.2.1"
     shell:
         "Assemblytics {input.delta_files} {params.prefix} 10000 50 10000"
+'''
 
 rule minimap2:
     threads:get_threads("minimap2", 1)
     input:
         reference_file = ref,
-        reads = long_reads_dir + "{samples}.fastq.gz"
+        reads = f"{long_reads_dir}{{samples}}.fastq.gz"
     output:
-        bam_file = minimap_dir + "{samples}_sorted.bam"
+        bam_file = f"{output_dir}4_STRUCTURAL_VAR/minimap2/{{samples}}_sorted.bam"
+    log :
+        error =  f'{log_dir}minimap2/minimap2_{{samples}}.e',
+        output = f'{log_dir}minimap2/minimap2_{{samples}}.o'
     message:
         f"""
              Running {{rule}}
                 Input:
-                    - Fasta : {{input.reads}}
+                    - Reads : {{input.reads}}
                 Output:
-                    - deltafile: {{output.bam_file}}
+                    - bam_file: {{output.bam_file}}
                 Others
                     - Threads : {{threads}}
 
@@ -244,16 +244,19 @@ rule minimap2:
 
 rule samtools_index:
     input:
-        bam_file = minimap_dir + "{samples}_sorted.bam"
+        bam_file = f"{output_dir}4_STRUCTURAL_VAR/minimap2/{{samples}}_sorted.bam"
     output:
-        bam_index = minimap_dir + "{samples}_sorted.bam.bai"
+        bam_index = f"{output_dir}4_STRUCTURAL_VAR/minimap2/{{samples}}_sorted.bam.bai"
+    log :
+        error =  f'{log_dir}minimap2/samtools_index_{{samples}}.e',
+        output = f'{log_dir}minimap2/samtools_index_{{samples}}.o'
     message:
         f"""
              Running {{rule}}
                 Input:
-                    - Fasta : {{input.bam_file}}
+                    - bam_file : {{input.bam_file}}
                 Output:
-                    - deltafile: {{output.bam_index}}
+                    - bam_index: {{output.bam_index}}
                 Others
                     - Threads : {{threads}}
 
@@ -266,10 +269,13 @@ rule samtools_index:
 rule sniffles:
     threads:3
     input:
-        bam_file = minimap_dir + "{samples}_sorted.bam",
-        bam_index = minimap_dir + "{samples}_sorted.bam.bai"
+        bam_file = f"{output_dir}4_STRUCTURAL_VAR/minimap2/{{samples}}_sorted.bam",
+        bam_index = f"{output_dir}4_STRUCTURAL_VAR/minimap2/{{samples}}_sorted.bam.bai"
     output:
-        vcf_file = minimap_dir + "{samples}.vcf"
+        vcf_file = f"{output_dir}4_STRUCTURAL_VAR/sniffles/{{samples}}.vcf"
+    log :
+        error =  f'{log_dir}sniffles/sniffles_{{samples}}.e',
+        output = f'{log_dir}sniffles/sniffles_{{samples}}.o'
     message:
         f"""
              Running {{rule}}
@@ -287,12 +293,15 @@ rule sniffles:
 rule repeatmasker:
     threads:1
     input:
-        fasta_file = "{samples}_renamed.fasta",
-        lib_file = lib_dir + "Fungi_all.fasta"
+        fasta_file = f"{output_dir}1_FASTA_SORTED/{{samples}}.fasta",
+        lib_file = f"{lib_dir}Fungi_all.fasta"
     params:
-        directory = output_dir
+        directory = f"{output_dir}3_REPEATMASKER"
     output:
-        fasta_masked = output_dir + "{samples}.fasta.masked"
+        fasta_masked = f"{output_dir}3_REPEATMASKER/{{samples}}.fasta.masked"
+    log :
+        error =  f'{log_dir}repeatmasker/repeatmasker_{{samples}}.e',
+        output = f'{log_dir}repeatmasker/repeatmasker_{{samples}}.o'
     message:
         f"""
              Running {{rule}}
@@ -312,24 +321,25 @@ rule repeatmasker:
 rule remove_contigs:
     threads:1
     input:
-        fasta_file_masked = output_dir + "{samples}.fasta.masked",
-        fasta = "{samples}_renamed.fasta"
+        fasta_file_masked = f"{output_dir}3_REPEATMASKER/{{samples}}.fasta.masked",
+        fasta = f"{output_dir}1_FASTA_SORTED/{{samples}}.fasta"
     output:
-        final_files = "{samples}_masked.fasta"
+        final_files = f"{output_dir}5_FINAL_FASTA/{{samples}}.fasta"
     params:
-        threshold = 70
+        threshold = config["TOOLS_PARAM"]["REMOVE_CONTIGS_TRESHOLD"]
+    log :
+        error =  f'{log_dir}remove_contigs/remove_contigs_{{samples}}.e',
+        output = f'{log_dir}remove_contigs/remove_contigs_{{samples}}.o'
     message:
         f"""
              Running {{rule}}
                 Input:
                     - Fasta : {{input.fasta_file_masked}}
                 Output:
-                    - fasta_masked: {{output.final_files}}
+                    - final_files: {{output.final_files}}
                 Others
                     - Threads : {{threads}}
 
             """
     shell:
         "python function_remove.py {input.fasta_file_masked} {input.fasta} {output.final_files} {params.threshold}"
-
-'''
