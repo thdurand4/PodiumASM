@@ -2,15 +2,16 @@ configfile: "config.yaml"
 #print(config)
 #print(cluster_config)
 
-fasta_dir = config["input_assemblies"]
-ref = config["ref"]
-output_dir = config["output_dir"]
+fasta_dir = config["DATA"]["ASSEMBLY"]
+ref = config["DATA"]["REFERENCE"]
+output_dir = config["DATA"]["OUTPUT"]
+db_busco = config["TOOLS_PARAM"]["BUSCO_DATABASE"]
 lib_dir = config["lib"]
 fasta_renamed_dir = config["dir_assemblies_renamed"]
 tapestry_dir = config["tapestry_dir"]
 long_reads_dir = config["long_reads"]
 minimap_dir = config["minimap2_dir"]
-log_dir = config["log_dir"]
+log_dir = f"{output_dir}LOGS/"
 
 
 def get_threads(rule, default):
@@ -32,51 +33,58 @@ def get_threads(rule, default):
 
 
 ASSEMBLIES, = glob_wildcards(fasta_dir+"{samples}.fasta", followlinks=True)
+print(ASSEMBLIES)
 
 rule finale:
     input:
         #dotplot_list = expand("{samples}.Assemblytics.Dotplot_filtered.png", samples = ASSEMBLIES),
         #fasta_masked_list = expand(output_dir + "{samples}.fasta.masked", samples = ASSEMBLIES),
         #final_fasta = expand("{samples}_masked.fasta", samples = ASSEMBLIES),
-        fasta_renamed = expand("{samples}_renamed.fasta", samples = ASSEMBLIES),
+        fasta_renamed = expand(f"{output_dir}1_FASTA_SORTED/{{samples}}.fasta",samples=ASSEMBLIES),
         #tapestry_files = expand(tapestry_dir + "{samples}/" + "{samples}.tapestry_report.html", samples = ASSEMBLIES),
-        bam_sorted_files = expand(minimap_dir + "{samples}_sorted.bam", samples = ASSEMBLIES),
-        bam_indexes = expand(minimap_dir + "{samples}_sorted.bam.bai", samples = ASSEMBLIES),
-        vcf_list = expand(minimap_dir + "{samples}.vcf", samples = ASSEMBLIES),
-	    quast_final_results = f"{output_dir}QUAST/report.pdf",
-	    busco_final_results = expand(f"{output_dir}BUSCO/result_busco/{{samples}}.fasta/short_summary.specific.sordariomycetes_odb10.{{samples}}.fasta.txt",samples=ASSEMBLIES),
-        figure_final = f"{output_dir}BUSCO/result_busco/busco_summaries/busco_figure.png"
+        #bam_sorted_files = expand(minimap_dir + "{samples}_sorted.bam", samples = ASSEMBLIES),
+        #bam_indexes = expand(minimap_dir + "{samples}_sorted.bam.bai", samples = ASSEMBLIES),
+        #vcf_list = expand(minimap_dir + "{samples}.vcf", samples = ASSEMBLIES),
+	    quast_final_results = f"{output_dir}2_GENOME_STATS/QUAST/report.pdf",
+	    busco_final_results = expand(f"{output_dir}2_GENOME_STATS/BUSCO/result_busco/{{samples}}.fasta/short_summary.specific.{db_busco}.{{samples}}.fasta.txt",samples=ASSEMBLIES),
+        #figure_final = f"{output_dir}BUSCO/result_busco/busco_summaries/busco_figure.png"
 
 rule rename_contigs:
     threads:1
     input:
-        assembly = fasta_dir + "{samples}.fasta"
+        assembly = f"{fasta_dir}{{samples}}.fasta"
     output:
-        file_renamed = "{samples}_renamed.fasta"
+        sorted_fasta = f"{output_dir}1_FASTA_SORTED/{{samples}}.fasta"
+    log :
+        error =  f'{log_dir}fasta_sorted/fasta_sorted_{{samples}}.e',
+        output = f'{log_dir}fasta_sorted/fasta_sorted_{{samples}}.o'
     message:
             f"""
              Running {{rule}}
                 Input:
                     - Fasta : {{input.assembly}}
                 Output:
-                    - deltafile: {{output.file_renamed}}
+                    - Fasta_sorted: {{output.sorted_fasta}}
                 Others
                     - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
 
             """
     shell:
-        "python function_rename.py {input.assembly} {output.file_renamed}"
+        "python function_rename.py {input.assembly} {output.sorted_fasta} 1>{log.output} 2>{log.error}"
 
 rule quast_full_contigs:
     """make quast report for our strain assembly"""
     threads: get_threads("quast_full_contigs", 6)
     input:
-            fasta = expand("{samples}_renamed.fasta",samples = ASSEMBLIES),
+            fasta = expand(rules.rename_contigs.output.sorted_fasta,samples=ASSEMBLIES),
             reference = ref
     output:
-            quast_results = f"{output_dir}QUAST/report.pdf"
+            quast_results = f"{output_dir}2_GENOME_STATS/QUAST/report.pdf"
     params:
-        dir = directory(f"{output_dir}QUAST/")
+        dir = directory(f"{output_dir}2_GENOME_STATS/QUAST/"),
+        other_option_quast =config["TOOLS_PARAM"]["QUAST"]
     log :
             error =  f'{log_dir}error.e',
             output = f'{log_dir}out.o'
@@ -95,7 +103,7 @@ rule quast_full_contigs:
             "quast/5.0.2"
     shell:
             """
-                quast {input.fasta} -m 3000 -t 6 --fragmented -r {input.reference} -o {params.dir}
+                quast {input.fasta} -t {threads} {params.other_option_quast} -r {input.reference} -o {params.dir}
             """
 rule busco:
     """make quast report for our strain assembly"""
@@ -103,10 +111,11 @@ rule busco:
     input:
             fasta = fasta_dir
     output:
-            busco_out = expand(f"{output_dir}BUSCO/result_busco/{{samples}}.fasta/short_summary.specific.sordariomycetes_odb10.{{samples}}.fasta.txt",samples=ASSEMBLIES)
+            busco_out = expand(f"{output_dir}2_GENOME_STATS/BUSCO/result_busco/{{samples}}.fasta/short_summary.specific.{db_busco}.{{samples}}.fasta.txt",samples=ASSEMBLIES)
     params:
-            busco_out_path = f"{output_dir}BUSCO/",
-            busco_result = f"result_busco"
+            busco_out_path = f"{output_dir}2_GENOME_STATS/BUSCO/",
+            busco_result = f"result_busco",
+            other_option_busco = config["TOOLS_PARAM"]["BUSCO"]
     log :
             error =  f'{log_dir}busco/busco.e',
             output = f'{log_dir}busco/busco.o'
@@ -126,9 +135,9 @@ rule busco:
             "busco/5.1.2"
     shell:
             """
-                busco -i {input.fasta} -l sordariomycetes_odb10 -m genome --out_path {params.busco_out_path} -o {params.busco_result} --download_path {params.busco_out_path}  -f 1>{log.output} 2>{log.error}
+                busco -i {input.fasta} {params.other_option_busco}  -l {db_busco} -m genome --out_path {params.busco_out_path} -o {params.busco_result} --download_path {params.busco_out_path}  -f 1>{log.output} 2>{log.error}
             """
-
+'''
 rule tapestry:
     threads:3
     input:
@@ -323,3 +332,4 @@ rule remove_contigs:
     shell:
         "python function_remove.py {input.fasta_file_masked} {input.fasta} {output.final_files} {params.threshold}"
 
+'''
