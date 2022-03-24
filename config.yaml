@@ -15,11 +15,14 @@ tapestry_dir: /shared/home/sbache/annotation_fusarium/assembly/snakemake_test/ta
 minimap2_dir: /shared/home/sbache/annotation_fusarium/assembly/snakemake_test/minimap2/
 
 DATA:
-    REFERENCE: "/shared/ifbstor1/projects/annotation_fijiensism2/assembly_worflow/ref/Mycfi2_wg_ed.fasta"
-    ASSEMBLY: "/shared/ifbstor1/projects/annotation_fijiensism2/assembly_worflow/souches_assemblage/"
-    OUTPUT: "/shared/ifbstor1/projects/annotation_fijiensism2/assembly_worflow/results/"
+    REFERENCE: "/shared/home/sbache/annotation_fusarium/assembly/snakemake_test/reference/UK0001.fasta"
+    ASSEMBLY: "/shared/home/sbache/annotation_fusarium/assembly/snakemake_test/fasta_files/"
+    OUTPUT: "/shared/home/sbache/annotation_fusarium/assembly/snakemake_test/output_dir/"
+    LONG_READS: "/shared/home/sbache/annotation_fusarium/fastq_guppy5/"
+    REPEAT_LIB: "/shared/home/sbache/annotation_fusarium/assembly/Library_RM/"
 
 TOOLS_PARAM:
     BUSCO_DATABASE: "sordariomycetes_odb10"
     QUAST : "--fragmented -m 3000"
     BUSCO : ""
+    REMOVE_CONTIGS_TRESHOLD: "70"
