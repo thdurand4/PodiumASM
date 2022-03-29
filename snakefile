@@ -631,13 +631,13 @@ rule sniffles:
     shell:
         "sniffles -i {input.bam_file} -v {output.vcf_file}"
 
-rule coverage:
+rule align_assembly:
     threads:8
     input:
         reads = f"{long_reads_dir}{{samples}}.fastq.gz",
         fasta = f"{output_dir}1_FASTA_SORTED/{{samples}}.fasta"
     output:
-        coverage_file = f"{output_dir}2_GENOME_STATS/COVERAGE/{{samples}}_coverage"
+        bam_file = f"{output_dir}2_GENOME_STATS/COVERAGE/{{samples}}_sorted.bam"
     message:
         f"""
              Running {{rule}}
@@ -645,7 +645,7 @@ rule coverage:
                     - fasta : {{input.fasta}}
                     - reads : {{input.reads}}
                 Output:
-                    - coverage_file: {{output.coverage_file}}
+                    - bam_file: {{output.bam_file}}
                 Others
                     - Threads : {{threads}}
 
@@ -657,9 +657,30 @@ rule coverage:
         """
         minimap2 -ax map-ont {input.fasta} {input.reads} |
         samtools view -b |
-        samtools sort |
-        samtools coverage -o {output.coverage_file}
+        samtools sort -o {output.bam_file}
         """
+
+rule coverage:
+    threads: 1
+    input:
+        bam_file = f"{output_dir}2_GENOME_STATS/COVERAGE/{{samples}}_sorted.bam"
+    output:
+        coverage_file = f"{output_dir}2_GENOME_STATS/COVERAGE/{{samples}}_coverage"
+    message:
+        f"""
+             Running {{rule}}
+                Input:
+                    - bam : {{input.bam_file}}
+                Output:
+                    - coverage: {{output.coverage_file}}
+                Others
+                    - Threads : {{threads}}
+
+            """
+    envmodules:
+        "samtools"
+    shell:
+        "samtools coverage {input.bam_file} -o {output.coverage_file}"
 
 rule repeatmasker:
     threads: get_threads("repeatmasker", 10)
