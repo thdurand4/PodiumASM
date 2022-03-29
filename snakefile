@@ -68,7 +68,8 @@ rule finale:
         txt_depth = expand(f"{output_dir}6_MAPPING_ILLUMINA/STATS/depth/{{samples}}_DEPTH.txt",samples=ASSEMBLIES),
         csv_chacun = expand(f'{output_dir}6_MAPPING_ILLUMINA/STATS/depth/{{samples}}.csv', samples=ASSEMBLIES),
         csv_bam_depth = report(f"{output_dir}6_MAPPING_ILLUMINA/STATS/all_mapping_stats_Depth_resume.csv"),
-        report_html = f"{output_dir}6_MAPPING_ILLUMINA/STATS/report.html"
+        report_html = f"{output_dir}6_MAPPING_ILLUMINA/STATS/report.html",
+        coverage_files = expand(f"{output_dir}2_GENOME_STATS/COVERAGE/{{samples}}_coverage", samples = ASSEMBLIES)
 
 rule rename_contigs:
     threads: get_threads("rename_contigs",2)
@@ -629,6 +630,36 @@ rule sniffles:
             """
     shell:
         "sniffles -i {input.bam_file} -v {output.vcf_file}"
+
+rule coverage:
+    threads:8
+    input:
+        reads = f"{long_reads_dir}{{samples}}.fastq.gz",
+        fasta = f"{output_dir}1_FASTA_SORTED/{{samples}}.fasta"
+    output:
+        coverage_file = f"{output_dir}2_GENOME_STATS/COVERAGE/{{samples}}_coverage"
+    message:
+        f"""
+             Running {{rule}}
+                Input:
+                    - fasta : {{input.fasta}}
+                    - reads : {{input.reads}}
+                Output:
+                    - coverage_file: {{output.coverage_file}}
+                Others
+                    - Threads : {{threads}}
+
+            """
+    envmodules:
+        "minimap2",
+        "samtools"
+    shell:
+        """
+        minimap2 -ax map-ont {input.fasta} {input.reads} |
+        samtools view -b |
+        samtools sort |
+        samtools coverage -o {output.coverage_file}
+        """
 
 rule repeatmasker:
     threads: get_threads("repeatmasker", 10)
