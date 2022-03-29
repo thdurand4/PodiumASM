@@ -1,15 +1,17 @@
 configfile: "config.yaml"
 #print(config)
 #print(cluster_config)
+from function_snakemake import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
+
 
 fasta_dir = config["DATA"]["ASSEMBLY"]
 ref = config["DATA"]["REFERENCE"]
 output_dir = config["DATA"]["OUTPUT"]
 db_busco = config["TOOLS_PARAM"]["BUSCO_DATABASE"]
 lib_dir = config["DATA"]["REPEAT_LIB"]
-fasta_renamed_dir = config["dir_assemblies_renamed"]
-tapestry_dir = config["tapestry_dir"]
 long_reads_dir = config["DATA"]["LONG_READS"]
+short_read_dir = config["DATA"]["SHORT_READS"]
+
 log_dir = f"{output_dir}LOGS/"
 
 
@@ -30,9 +32,23 @@ def get_threads(rule, default):
         return workflow.global_resources["_cores"]
     return default
 
+def get_fastq_file(wildcards):
+    """return if file provide from cleaning or direct sample"""
+    print(wildcards)
+    dico_mapping = {
+                    "fasta": f"{fasta_dir}{{samples}}.fasta",
+                    "index": rules.bwa_index.output
+                    }
+    dico_mapping.update({
+                    "R1" :f"{short_read_dir}{{samples}}_R1.fastq.gz",
+                    "R2" :f"{short_read_dir}{{samples}}_R2.fastq.gz"
+                })
+    # print(dico_mapping)
+    return dico_mapping
 
 ASSEMBLIES, = glob_wildcards(fasta_dir+"{samples}.fasta", followlinks=True)
-print(ASSEMBLIES)
+#print(ASSEMBLIES)
+BWA_INDEX = ['amb','ann','bwt','pac','sa']
 
 rule finale:
     input:
@@ -42,11 +58,20 @@ rule finale:
         #tapestry_files = expand(tapestry_dir + "{samples}/" + "{samples}.tapestry_report.html", samples = ASSEMBLIES),
         vcf_list = expand(f"{output_dir}4_STRUCTURAL_VAR/sniffles/{{samples}}.vcf", samples = ASSEMBLIES),
 	    quast_final_results = f"{output_dir}2_GENOME_STATS/QUAST/report.pdf",
+	    repeat_masker = expand(f"{output_dir}3_REPEATMASKER/{{samples}}/{{samples}}.fasta.masked", samples = ASSEMBLIES),
 	    busco_final_results = expand(f"{output_dir}2_GENOME_STATS/BUSCO/result_busco/{{samples}}.fasta/short_summary.specific.{db_busco}.{{samples}}.fasta.txt",samples=ASSEMBLIES),
-        #figure_final = f"{output_dir}BUSCO/result_busco/busco_summaries/busco_figure.png"
+        figure_final = f"{output_dir}2_GENOME_STATS/BUSCO/result_busco/busco_summaries/busco_figure.png",
+        bam_final = expand(f"{output_dir}6_MAPPING_ILLUMINA/BWA_MEM/{{samples}}.bam",samples = ASSEMBLIES),
+        sam_index = expand(f"{output_dir}6_MAPPING_ILLUMINA/BWA_MEM/{{samples}}.bam.bai",samples=ASSEMBLIES),
+        txt_idxfile = expand(f"{output_dir}6_MAPPING_ILLUMINA/STATS/idxstats/{{samples}}_IDXSTATS.txt",samples=ASSEMBLIES),
+        csv_final = report(f"{output_dir}6_MAPPING_ILLUMINA/STATS/all_mapping_stats_resume.csv"),
+        txt_depth = expand(f"{output_dir}6_MAPPING_ILLUMINA/STATS/depth/{{samples}}_DEPTH.txt",samples=ASSEMBLIES),
+        csv_chacun = expand(f'{output_dir}6_MAPPING_ILLUMINA/STATS/depth/{{samples}}.csv', samples=ASSEMBLIES),
+        csv_bam_depth = report(f"{output_dir}6_MAPPING_ILLUMINA/STATS/all_mapping_stats_Depth_resume.csv"),
+        report_html = f"{output_dir}6_MAPPING_ILLUMINA/STATS/report.html"
 
 rule rename_contigs:
-    threads:1
+    threads: get_threads("rename_contigs",2)
     input:
         assembly = f"{fasta_dir}{{samples}}.fasta"
     output:
@@ -69,6 +94,276 @@ rule rename_contigs:
             """
     shell:
         "python function_rename.py {input.assembly} {output.sorted_fasta} 1>{log.output} 2>{log.error}"
+
+
+rule bwa_index:
+    """make index with bwa for reference file"""
+    threads: get_threads("bwa_index", 1)
+    input:
+            fasta = f'{fasta_dir}{{samples}}.fasta'
+    output:
+            expand(f'{fasta_dir}{{samples}}.fasta.{{suffix}}',samples="{samples}",suffix= BWA_INDEX)
+    log :
+            error =  f'{log_dir}bwa_index/{{samples}}.e',
+            output = f'{log_dir}bwa_index/{{samples}}.o'
+    message:
+            f"""
+             Running {{rule}}
+                Input:
+                    - Fasta strain : {{input.fasta}}
+                Output:
+                    - sa_file: {{output}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error strain: {{log.error}}
+                    - LOG output strain: {{log.output}}
+            """
+    envmodules:
+            "bwa/0.7.17"
+    shell:
+            """
+                bwa index {input.fasta} 1>{log.output} 2>{log.error}
+            """
+rule bwa_mem_sort_bam:
+    """make bwa mem for all samples on reference"""
+    threads: get_threads('bwa_mem_sort_bam', 1)
+    input:
+            unpack(get_fastq_file)
+    output:
+            bam_file =  f"{output_dir}6_MAPPING_ILLUMINA/BWA_MEM/{{samples}}.bam"
+    params:
+            rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
+            other_options_bwa = config["TOOLS_PARAM"]["BWA_MEM"],
+            other_options_samtools_view = config["TOOLS_PARAM"]["SAMTOOLS_VIEW"],
+            other_options_samtools_sort = config["TOOLS_PARAM"]["SAMTOOLS_SORT"]
+    log:
+            error =  f'{log_dir}bwa_mem_sort_bam/{{samples}}.e',
+            output = f'{log_dir}bwa_mem_sort_bam/{{samples}}.o'
+    message:
+            f"""
+            Running {{rule}}
+                Input:
+                    - Fasta : {{input.fasta}}
+                    - R1: {{input.R1}}
+                    - R2: {{input.R2}}
+                Output:
+                    - Bam strain: {{output.bam_file}}
+                Params:
+                    - other_options_bwa: {{params.other_options_bwa}}
+                    - other_options_samtools_view: {{params.other_options_samtools_view}}
+                    - other_options_samtools_sort: {{params.other_options_samtools_sort}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            """
+    envmodules:
+            "bwa/0.7.17",
+            "samtools/1.9"
+    shell:
+            """
+                    (bwa mem -t {threads} {input.fasta} {input.R1} {input.R2} -R '{params.rg}' |
+                    samtools view -@ {threads} {params.other_options_samtools_view} |
+                    samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file} ) 1>{log.output} 2>{log.error}
+            """
+
+rule samtools_index_illumina:
+    """index bam for use stats"""
+    threads: get_threads('samtools_index', 1)
+    input:
+            bam = rules.bwa_mem_sort_bam.output.bam_file
+    output:
+            bai = f"{output_dir}6_MAPPING_ILLUMINA/BWA_MEM/{{samples}}.bam.bai"
+    log:
+            error =  f'{log_dir}samtools_index/{{samples}}.e',
+            output = f'{log_dir}samtools_index/{{samples}}.o'
+    message:
+            f"""
+            Running {{rule}}
+                Input:
+                    - Bam : {{input.bam}}
+                Output:
+                    - Bai : {{output.bai}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            """
+    envmodules:
+        "samtools/1.9"
+    shell:
+            """
+                samtools index -@ {threads} {input.bam} 1>{log.output} 2>{log.error}
+            """
+
+####### Stats
+
+rule samtools_idxstats:
+    """apply samtools idxstats on all bam"""
+    threads: get_threads('samtools_idxstats', 1)
+    input:
+            bam = rules.samtools_index_illumina.input.bam
+            #bai = rules.samtools_index.output.bai
+    output:
+            txt_file = f"{output_dir}6_MAPPING_ILLUMINA/STATS/idxstats/{{samples}}_IDXSTATS.txt"
+    log:
+            error =  f'{log_dir}samtools_idxstats/{{samples}}.e',
+            output = f'{log_dir}samtools_idxstats/{{samples}}.o'
+    message:
+            f"""
+            Running {{rule}} for
+                Input:
+                    - Bam : {{input.bam}}
+                Output:
+                    - txt : {{output.txt_file}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            """
+    envmodules:
+        "samtools/1.9"
+    shell:
+            """
+                samtools idxstats -@ {threads} {input.bam} | tee {output.txt_file} 1>{log.output} 2>{log.error}
+            """
+rule merge_idxstats:
+    """merge all samtools idxstats files"""
+    threads : get_threads('merge_idxstats', 1)
+    input :
+            csv_resume = expand(rules.samtools_idxstats.output.txt_file , samples = ASSEMBLIES)
+
+    output :
+            csv_resume_merge = report(f"{output_dir}6_MAPPING_ILLUMINA/STATS/all_mapping_stats_resume.csv", category="Resume mapping info's")
+    log:
+            error =  f'{log_dir}merge_idxstats/all_mapping_stats_resume.e',
+            output = f'{log_dir}merge_idxstats/all_mapping_stats_resume.o'
+    message:
+            f"""
+            Running {{rule}} for
+                Input:
+                    - CSV_files : {{input.csv_resume}}
+                Output:
+                    - Merge CSV : {{output.csv_resume_merge}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            """
+    run :
+        parse_idxstats(input.csv_resume, output.csv_resume_merge, sep="\t")
+
+rule samtools_depth:
+    """apply samtools depth on all bam SE end PE"""
+    threads: get_threads('samtools_depth', 1)
+    input:
+            bam = rules.samtools_index_illumina.input.bam
+            #bai = rules.samtools_index.output.bai
+    output:
+            txt_file = f"{output_dir}6_MAPPING_ILLUMINA/STATS/depth/{{samples}}_DEPTH.txt"
+    params:
+            other_options = config["TOOLS_PARAM"]["SAMTOOLS_DEPTH"]
+    log:
+            error =  f'{log_dir}samtools_depth/{{samples}}.e',
+            output = f'{log_dir}samtools_depth/{{samples}}.o'
+    message:
+            f"""
+            Execute {{rule}} for
+                Input:
+                    - Bam : {{input.bam}}
+                Output:
+                    - txt : {{output.txt_file}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            """
+    envmodules:
+        "samtools/1.9"
+    shell:
+            """
+                samtools depth {params.other_options} {input.bam} | tee {output.txt_file} 1>{log.output} 2>{log.error}
+            """
+
+rule bam_stats_to_csv:
+    """build csv with mean depth, median depth and mean coverage for all bam"""
+    threads : get_threads('bam_stats_to_csv', 1)
+    input :
+            bam = rules.samtools_index_illumina.input.bam,
+            bai = rules.samtools_index_illumina.output.bai,
+            txt = rules.samtools_depth.output.txt_file
+    output :
+            csv_resume = f'{output_dir}6_MAPPING_ILLUMINA/STATS/depth/{{samples}}.csv'
+    log:
+            error =  f'{log_dir}bam_stats_to_csv/{{samples}}.e',
+            output = f'{log_dir}bam_stats_to_csv/{{samples}}.o'
+    message:
+            f"""
+            Running {{rule}}
+                Input:
+                    - Bam : {{input.bam}}
+                Output:
+                    - CSV : {{output.csv_resume}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            """
+    run :
+        check_mapping_stats(input.bam, output.csv_resume, sep="\t")
+
+rule merge_bam_stats:
+    """merge all bam_stats_to_csv files"""
+    threads : get_threads('merge_bam_stats', 1)
+    input :
+            csv_resume = expand(rules.bam_stats_to_csv.output.csv_resume , samples = ASSEMBLIES)
+    output :
+            csv_resume_merge = report(f"{output_dir}6_MAPPING_ILLUMINA/STATS/all_mapping_stats_Depth_resume.csv", category="Resume mapping info's")
+    log:
+            error =  f'{log_dir}merge_bam_stats/mergeResume.e',
+            output = f'{log_dir}merge_bam_stats/mergeResume.o'
+    message:
+            f"""
+            Running {{rule}}
+                Input:
+                    - CSV list : {{input.csv_resume}}
+                Output:
+                    - CSV : {{output.csv_resume_merge}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            """
+    run :
+        merge_bam_stats_csv(input.csv_resume, output.csv_resume_merge, sep="\t")
+
+rule report:
+    threads: get_threads('report', 1)
+    input:
+         depth_resume = rules.merge_bam_stats.output.csv_resume_merge,
+         idxstats_resume = rules.merge_idxstats.output.csv_resume_merge
+    output:
+        report = f"{output_dir}6_MAPPING_ILLUMINA/STATS/report.html"
+    log:
+            error =  f'{log_dir}report/report.e',
+            output = f'{log_dir}report/report.o'
+    # envmodules:
+        # tools_config["MODULES"]["R"]
+    message:
+            f"""
+            Running {{rule}}
+                Input:
+                    - csv : {{input.depth_resume}}
+                    - csv : {{input.idxstats_resume}}
+                Output:
+                    - report : {{output.report}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            """
+    script:
+        """report.Rmd"""
 
 rule quast_full_contigs:
     """make quast report for our strain assembly"""
@@ -105,9 +400,9 @@ rule busco:
     """make quast report for our strain assembly"""
     threads: get_threads("busco", 8)
     input:
-            fasta = fasta_dir
+            fasta = expand(f"{fasta_dir}{{samples}}.fasta",samples=ASSEMBLIES)
     output:
-            busco_out = expand(f"{output_dir}2_GENOME_STATS/BUSCO/result_busco/{{samples}}.fasta/short_summary.specific.{db_busco}.{{samples}}.fasta.txt",samples=ASSEMBLIES)
+            busco_out = expand(f"{output_dir}2_GENOME_STATS/BUSCO/result_busco/{{samples}}.fasta/short_summary.specific.{db_busco}.{{samples}}.fasta.txt",samples = ASSEMBLIES)
     params:
             busco_out_path = f"{output_dir}2_GENOME_STATS/BUSCO/",
             busco_result = f"result_busco",
@@ -131,8 +426,44 @@ rule busco:
             "busco/5.1.2"
     shell:
             """
-                busco -i {input.fasta} {params.other_option_busco}  -l {db_busco} -m genome --out_path {params.busco_out_path} -o {params.busco_result} --download_path {params.busco_out_path}  -f 1>{log.output} 2>{log.error}
+                busco -i {input.fasta} {params.other_option_busco} -l {db_busco} -m genome --out_path {params.busco_out_path} -o {params.busco_result} --download_path {params.busco_out_path}  -f 1>{log.output} 2>{log.error}
             """
+
+rule busco_figure:
+    """make quast report for our strain assembly"""
+    threads: get_threads("busco_figure", 8)
+    input:
+            txt_busco = expand(f"{output_dir}2_GENOME_STATS/BUSCO/result_busco/{{samples}}.fasta/short_summary.specific.{db_busco}.{{samples}}.fasta.txt",samples=ASSEMBLIES)
+    output:
+            figure = f"{output_dir}2_GENOME_STATS/BUSCO/result_busco/busco_summaries/busco_figure.png"
+    params:
+            folder = "busco_summaries"
+    log :
+            error =  f'{log_dir}busco_figure/busco.e',
+            output = f'{log_dir}busco_figure/busco.o'
+    message:
+            f"""
+             Running {{rule}}
+                Input:
+                    - Fasta : {{input.txt_busco}}
+                Output:
+                    - figure_file: {{output.figure}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            """
+    envmodules:
+            "busco/5.1.2"
+    shell:
+            """
+                mkdir -p {output_dir}2_GENOME_STATS/BUSCO/result_busco/{params.folder}
+                cp {input.txt_busco} {output_dir}2_GENOME_STATS/BUSCO/result_busco/{params.folder}/
+                generate_plot.py -wd {output_dir}2_GENOME_STATS/BUSCO/result_busco/{params.folder}/ 1>{log.output} 2>{log.error}
+
+            """
+
+
 '''
 rule tapestry:
     threads:3
@@ -212,7 +543,7 @@ rule assemblytics:
 '''
 
 rule minimap2:
-    threads:get_threads("minimap2", 1)
+    threads:get_threads("minimap2", 5)
     input:
         reference_file = ref,
         reads = f"{long_reads_dir}{{samples}}.fastq.gz"
@@ -226,10 +557,13 @@ rule minimap2:
              Running {{rule}}
                 Input:
                     - Reads : {{input.reads}}
+                    - Reference : {{input.reference_file}}
                 Output:
                     - bam_file: {{output.bam_file}}
                 Others
                     - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
 
             """
     envmodules:
@@ -243,6 +577,7 @@ rule minimap2:
         """
 
 rule samtools_index:
+    threads: get_threads("samtools_index",1)
     input:
         bam_file = f"{output_dir}4_STRUCTURAL_VAR/minimap2/{{samples}}_sorted.bam"
     output:
@@ -259,6 +594,8 @@ rule samtools_index:
                     - bam_index: {{output.bam_index}}
                 Others
                     - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
 
             """
     envmodules:
@@ -267,7 +604,7 @@ rule samtools_index:
         "samtools index {input.bam_file} {output.bam_index}"
 
 rule sniffles:
-    threads:3
+    threads:get_threads("sniffles",6)
     input:
         bam_file = f"{output_dir}4_STRUCTURAL_VAR/minimap2/{{samples}}_sorted.bam",
         bam_index = f"{output_dir}4_STRUCTURAL_VAR/minimap2/{{samples}}_sorted.bam.bai"
@@ -280,25 +617,29 @@ rule sniffles:
         f"""
              Running {{rule}}
                 Input:
-                    - bam : {{input.bam_file}}
+                    - BAM : {{input.bam_file}}
+                    - BAI : {{input.bam_index}}
                 Output:
                     - vcf: {{output.vcf_file}}
                 Others
                     - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
 
             """
     shell:
         "sniffles -i {input.bam_file} -v {output.vcf_file}"
 
 rule repeatmasker:
-    threads:1
+    threads: get_threads("repeatmasker", 10)
     input:
-        fasta_file = f"{output_dir}1_FASTA_SORTED/{{samples}}.fasta",
-        lib_file = f"{lib_dir}Fungi_all.fasta"
+        fasta_file = f"{output_dir}1_FASTA_SORTED/{{samples}}.fasta"
     params:
-        directory = f"{output_dir}3_REPEATMASKER"
+        directory = f"{output_dir}3_REPEATMASKER/{{samples}}",
+        lib_file = f"{lib_dir}",
+        other_option_RM = config["TOOLS_PARAM"]["REPEAT_MASKER"]
     output:
-        fasta_masked = f"{output_dir}3_REPEATMASKER/{{samples}}.fasta.masked"
+        fasta_masked = f"{output_dir}3_REPEATMASKER/{{samples}}/{{samples}}.fasta.masked"
     log :
         error =  f'{log_dir}repeatmasker/repeatmasker_{{samples}}.e',
         output = f'{log_dir}repeatmasker/repeatmasker_{{samples}}.o'
@@ -311,17 +652,19 @@ rule repeatmasker:
                     - fasta_masked: {{output.fasta_masked}}
                 Others
                     - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
 
             """
     envmodules:
         "repeatmasker/4.1.2.p1"
     shell:
-        "RepeatMasker -lib {input.lib_file} -no_is {input.fasta_file} -dir {params.directory}"
+        "RepeatMasker -lib {params.lib_file} {params.other_option_RM} {input.fasta_file} -dir {params.directory}"
 
 rule remove_contigs:
-    threads:1
+    threads: get_threads("remove_contigs",1)
     input:
-        fasta_file_masked = f"{output_dir}3_REPEATMASKER/{{samples}}.fasta.masked",
+        fasta_file_masked = f"{output_dir}3_REPEATMASKER/{{samples}}/{{samples}}.fasta.masked",
         fasta = f"{output_dir}1_FASTA_SORTED/{{samples}}.fasta"
     output:
         final_files = f"{output_dir}5_FINAL_FASTA/{{samples}}.fasta"
@@ -334,11 +677,14 @@ rule remove_contigs:
         f"""
              Running {{rule}}
                 Input:
-                    - Fasta : {{input.fasta_file_masked}}
+                    - Fasta : {{input.fasta}}
+                    - Masked_Fasta : {{input.fasta_file_masked}}
                 Output:
                     - final_files: {{output.final_files}}
                 Others
                     - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
 
             """
     shell:
