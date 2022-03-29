@@ -18,7 +18,7 @@ for k in range(len(dict)):
 
 x=[]
 for k in range(len(dict)):
-    x.append("contig"+str(k+1))
+    x.append("contig_"+str(k+1))
 
 for k in range(len(list_records)):
     list_records[k].id = x[k]
