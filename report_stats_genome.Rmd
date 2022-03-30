@@ -1,0 +1,88 @@
+---
+title: "Assembly stat report"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+author: "Théo DURAND and Simon BACHE"
+params:
+   rmd: "report.Rmd"
+output:
+  rmdformats::readthedown:
+    fig_caption: TRUE
+    lightbox: TRUE
+    gallery: TRUE
+    mathjax: "rmdformats"
+    highlight: pygments
+    toc_depth: 5
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+
+---
+<style>
+
+h1,h2,h3,h4,h5,h6,legend{
+color: #000000;
+}
+.footer{
+    position:absolute; top:0; right:20px; padding:30px; height:180px
+    }
+</style>
+
+```{r load package, include=FALSE, echo= FALSE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE)
+suppressMessages(library('knitr', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('plotly', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('rmdformats', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('DT', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('ggplot2', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('rmarkdown', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('readr', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('reticulate', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('stringr', warn.conflict = FALSE, quietly = TRUE))
+```
+# General stat on assembly{.tabset .tabset-fade}
+
+```{r Importation des données, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+#file.quality <- snakemake@input$idxstats_resume
+file.quality <- "/home/durand/PycharmProjects/CIRAD/CSV_file/"
+#cvs_table <- read.table(file=file.quality, sep=",", header=TRUE)
+#file.quality.depth <- snakemake@input$depth_resume
+# file.quality.depth <- "/media/work/RattleSNP-git/script/all_mapping_stats_Depth_resume.csv"
+#datatableDepth <- read.table(file=file.quality.depth, sep="\t", header=TRUE)
+csv_dir = "/home/durand/PycharmProjects/CIRAD/CSV_file"
+csv_files = list.files(csv_dir)
+```
+
+
+```{r Visualisation des taille de librairie, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+toto = NULL
+for (i in 1:length(csv_files)) {
+  #cat(sprintf(paste0("## ",csv_files[i],"\n\n")))
+  csv_all = read.table(paste0(file=file.quality,csv_files[i]),sep=",",header=TRUE)
+  csv_replace = str_replace(csv_files[i],".csv","")
+  toto = c(toto, knit_expand(text="# {{csv_replace}}\n\n{{dt}}\n\n", quiet = TRUE , echo =F,message=F,dt = (DT::datatable(csv_all, caption =" Tableau des statistiques des tailles , %N , GC% et profondeur des contigs de l'assemblage",
+              rownames = NULL,
+              colnames = c(colnames(csv_all)),
+              escape = FALSE,
+              class = 'table table-striped table-bordered table-hover',
+              extensions = 'Buttons',
+              filter = list(position = 'top', clear = FALSE, plain = TRUE),
+              option= list(
+                         paging=TRUE,searching = TRUE,ordering=TRUE,scrollCollapse=FALSE,server = TRUE, autoWidth = TRUE,
+                         dom = 'BRSPQlfrtip',
+                         buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
+                         )
+             )
+  )))
+  
+}
+```
+```{r, results='asis', echo=FALSE, message = FALSE, warning = FALSE, include=TRUE}
+cat(paste(knit(text = toto,quiet=T), collapse = '\n'))
+```
+
+
+
+<footer>
+        <p style="text-align: center;">Snakemake report of workflow <a target="_blank" href="https://github.com/thdurand4/assembly_finder">AssemblyFinder</a> created by <a target="_blank" href="https://github.com/thdurand4">Théo DURAND</a> and <a target="_blank" href="https://github.com/SimonBache">Simon BACHE</a></p>
+        <p style="text-align: center;"><a target="_blank" href = "mailto:thdurand33@gmail.com"><span style="color: #808080;"><em>thdurand33@gmail.com</em></span></a> & <a target="_blank" href = "mailto:simonbch30@gmail.com"><span style="color: #808080;"><em>simonbch30@gmail.com</em></span></a></p>
+</footer>
