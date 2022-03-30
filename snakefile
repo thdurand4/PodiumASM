@@ -401,7 +401,7 @@ rule busco:
     """make quast report for our strain assembly"""
     threads: get_threads("busco", 8)
     input:
-            fasta = expand(f"{fasta_dir}{{samples}}.fasta",samples=ASSEMBLIES)
+            fasta = f"{output_dir}1_FASTA_SORTED/"
     output:
             busco_out = expand(f"{output_dir}2_GENOME_STATS/BUSCO/result_busco/{{samples}}.fasta/short_summary.specific.{db_busco}.{{samples}}.fasta.txt",samples = ASSEMBLIES)
     params:
@@ -427,7 +427,7 @@ rule busco:
             "busco/5.1.2"
     shell:
             """
-                busco -i {input.fasta} {params.other_option_busco} -l {db_busco} -m genome --out_path {params.busco_out_path} -o {params.busco_result} --download_path {params.busco_out_path}  -f 1>{log.output} 2>{log.error}
+                busco -i {input.fasta} {params.other_option_busco} -l {db_busco} -m genome --out_path {params.busco_out_path} -o {params.busco_result} --download_path {params.busco_out_path} -f 1>{log.output} 2>{log.error}
             """
 
 rule busco_figure:
@@ -631,6 +631,7 @@ rule sniffles:
     shell:
         "sniffles -i {input.bam_file} -v {output.vcf_file}"
 
+
 rule align_assembly:
     threads:8
     input:
@@ -681,6 +682,7 @@ rule coverage:
         "samtools"
     shell:
         "samtools coverage {input.bam_file} -o {output.coverage_file}"
+
 
 rule repeatmasker:
     threads: get_threads("repeatmasker", 10)
