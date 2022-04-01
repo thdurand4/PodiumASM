@@ -69,7 +69,9 @@ rule finale:
         csv_chacun = expand(f'{output_dir}6_MAPPING_ILLUMINA/STATS/depth/{{samples}}.csv', samples=ASSEMBLIES),
         csv_bam_depth = report(f"{output_dir}6_MAPPING_ILLUMINA/STATS/all_mapping_stats_Depth_resume.csv"),
         report_html = f"{output_dir}6_MAPPING_ILLUMINA/STATS/report.html",
-        coverage_files = expand(f"{output_dir}2_GENOME_STATS/COVERAGE/{{samples}}_coverage", samples = ASSEMBLIES)
+        coverage_files = expand(f"{output_dir}2_GENOME_STATS/COVERAGE/{{samples}}_coverage", samples = ASSEMBLIES),
+        csv_stat_final = expand(f"{output_dir}2_GENOME_STATS/STAT_CSV/{{samples}}.csv", samples = ASSEMBLIES),
+        report_stat_final = f"{output_dir}2_GENOME_STATS/report.html"
 
 rule rename_contigs:
     threads: get_threads("rename_contigs",2)
@@ -283,7 +285,7 @@ rule samtools_depth:
         "samtools/1.9"
     shell:
             """
-                samtools depth {params.other_options} {input.bam} | tee {output.txt_file} 1>{log.output} 2>{log.error}
+                samtools depth -@ {threads} {params.other_options} {input.bam} | tee {output.txt_file} 1>{log.output} 2>{log.error}
             """
 
 rule bam_stats_to_csv:
@@ -427,12 +429,12 @@ rule busco:
             "busco/5.1.2"
     shell:
             """
-                busco -i {input.fasta} {params.other_option_busco} -l {db_busco} -m genome --out_path {params.busco_out_path} -o {params.busco_result} --download_path {params.busco_out_path} -f 1>{log.output} 2>{log.error}
+                busco -c {threads} -i {input.fasta} {params.other_option_busco} -l {db_busco} -m genome --out_path {params.busco_out_path} -o {params.busco_result} --download_path {params.busco_out_path} -f 1>{log.output} 2>{log.error}
             """
 
 rule busco_figure:
     """make quast report for our strain assembly"""
-    threads: get_threads("busco_figure", 8)
+    threads: get_threads("busco_figure", 1)
     input:
             txt_busco = expand(f"{output_dir}2_GENOME_STATS/BUSCO/result_busco/{{samples}}.fasta/short_summary.specific.{db_busco}.{{samples}}.fasta.txt",samples=ASSEMBLIES)
     output:
@@ -573,12 +575,12 @@ rule minimap2:
     shell:
         """
         minimap2 -ax map-ont {input.reference_file} {input.reads} |
-        samtools view -b |
-        samtools sort -o {output.bam_file}
+        samtools view -b -@ {threads} |
+        samtools sort -@ {threads} -o {output.bam_file}
         """
 
 rule samtools_index:
-    threads: get_threads("samtools_index",1)
+    threads: get_threads("samtools_index",3)
     input:
         bam_file = f"{output_dir}4_STRUCTURAL_VAR/minimap2/{{samples}}_sorted.bam"
     output:
@@ -602,7 +604,7 @@ rule samtools_index:
     envmodules:
         "samtools/1.14"
     shell:
-        "samtools index {input.bam_file} {output.bam_index}"
+        "samtools index -@ {threads} {input.bam_file} {output.bam_index}"
 
 rule sniffles:
     threads:get_threads("sniffles",6)
@@ -629,16 +631,19 @@ rule sniffles:
 
             """
     shell:
-        "sniffles -i {input.bam_file} -v {output.vcf_file}"
+        "sniffles -i {input.bam_file} -v {output.vcf_file} -t {threads}"
 
 
 rule align_assembly:
-    threads:8
+    threads: get_threads("align_assembly",5)
     input:
         reads = f"{long_reads_dir}{{samples}}.fastq.gz",
         fasta = f"{output_dir}1_FASTA_SORTED/{{samples}}.fasta"
     output:
         bam_file = f"{output_dir}2_GENOME_STATS/COVERAGE/{{samples}}_sorted.bam"
+    log :
+        error =  f'{log_dir}align_assembly/align_assembly_{{samples}}.e',
+        output = f'{log_dir}sniffles/align_assembly_{{samples}}.o'
     message:
         f"""
              Running {{rule}}
@@ -649,6 +654,8 @@ rule align_assembly:
                     - bam_file: {{output.bam_file}}
                 Others
                     - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
 
             """
     envmodules:
@@ -657,16 +664,19 @@ rule align_assembly:
     shell:
         """
         minimap2 -ax map-ont {input.fasta} {input.reads} |
-        samtools view -b |
-        samtools sort -o {output.bam_file}
+        samtools view -@ {threads} -b |
+        samtools sort -@ {threads} -o {output.bam_file}
         """
 
 rule coverage:
-    threads: 1
+    threads: get_threads("coverage",4)
     input:
         bam_file = f"{output_dir}2_GENOME_STATS/COVERAGE/{{samples}}_sorted.bam"
     output:
         coverage_file = f"{output_dir}2_GENOME_STATS/COVERAGE/{{samples}}_coverage"
+    log :
+        error =  f'{log_dir}coverage/coverage_{{samples}}.e',
+        output = f'{log_dir}coverage/coverage_{{samples}}.o'
     message:
         f"""
              Running {{rule}}
@@ -676,6 +686,8 @@ rule coverage:
                     - coverage: {{output.coverage_file}}
                 Others
                     - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
 
             """
     envmodules:
@@ -714,6 +726,67 @@ rule repeatmasker:
         "repeatmasker/4.1.2.p1"
     shell:
         "RepeatMasker -lib {params.lib_file} {params.other_option_RM} {input.fasta_file} -dir {params.directory}"
+
+
+rule genome_stats:
+    threads: get_threads("genome_stats",1)
+    input:
+        mask = rules.repeatmasker.output.fasta_masked,
+        ordered = rules.rename_contigs.output.sorted_fasta,
+        depth_mean = rules.coverage.output.coverage_file
+    output:
+        csv_stat = f"{output_dir}2_GENOME_STATS/STAT_CSV/{{samples}}.csv"
+    params:
+        csv_path = f"{output_dir}2_GENOME_STATS/STAT_CSV"
+    log :
+        error =  f'{log_dir}stat_csv/csv_{{samples}}.e',
+        output = f'{log_dir}stat_csv/csv_{{samples}}.o'
+    message:
+        f"""
+             Running {{rule}}
+                Input:
+                    - Fasta masked : {{input.mask}}
+                    - Fasta ordered : {{input.ordered}}
+                    - Coverage : {{input.depth_mean}}
+                Output:
+                    - CSV file : {{output.csv_stat}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+
+            """
+    shell:
+        "python summary_contigs.py {input.mask} {input.ordered} {input.depth_mean} {output.csv_stat}"
+
+
+
+rule report_stats_contig:
+    threads: get_threads('report', 1)
+    input:
+         csv_all_dir = rules.genome_stats.params.csv_path
+    output:
+        report = f"{output_dir}2_GENOME_STATS/report.html"
+    log:
+            error =  f'{log_dir}report_stats/report_stats.e',
+            output = f'{log_dir}report_stats/report_stats.o'
+    # envmodules:
+        # tools_config["MODULES"]["R"]
+    message:
+            f"""
+            Running {{rule}}
+                Input:
+                    - csv : {{input.csv_all_dir}}
+                Output:
+                    - report : {{output.report}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            """
+    script:
+        """report_stats_genome.Rmd"""
+
 
 rule remove_contigs:
     threads: get_threads("remove_contigs",1)
