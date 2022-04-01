@@ -52,7 +52,8 @@ BWA_INDEX = ['amb','ann','bwt','pac','sa']
 
 rule finale:
     input:
-        #dotplot_list = expand("{samples}.Assemblytics.Dotplot_filtered.png", samples = ASSEMBLIES),
+        dotplot_list = expand(f"{output_dir}7_ALIGNMENTS/{{samples}}_assemblytics/report_{{samples}}.Assemblytics.Dotplot_filtered.png", samples = ASSEMBLIES),
+        delta_files = expand(f"{output_dir}7_ALIGNMENTS/{{samples}}.delta", samples = ASSEMBLIES),
         final_fasta = expand(f"{output_dir}5_FINAL_FASTA/{{samples}}.fasta", samples = ASSEMBLIES),
         fasta_renamed = expand(f"{output_dir}1_FASTA_SORTED/{{samples}}.fasta",samples=ASSEMBLIES),
         #tapestry_files = expand(tapestry_dir + "{samples}/" + "{samples}.tapestry_report.html", samples = ASSEMBLIES),
@@ -491,58 +492,6 @@ rule tapestry:
     shell:
         "weave -a {input.assemblies} -r {input.reads} -f -c 3 -o {params.directory} -t TAACCC TTAGGG"
 
-rule mummer:
-    """run mummer"""
-    threads:1
-    input:
-        fasta_file = "{samples}_renamed.fasta",
-        reference_file = ref
-    params:
-        prefix = "{samples}"
-    output:
-        delta = "{samples}.delta"
-    message:
-            f"""
-             Running {{rule}}
-                Input:
-                    - Fasta : {{input.fasta_file}}
-                Output:
-                    - deltafile: {{output.delta}}
-                Others
-                    - Threads : {{threads}}
-
-            """
-    envmodules:
-        "mummer4/4.0.0rc1"
-    shell:
-        """
-            nucmer -p {params.prefix} {input.reference_file} {input.fasta_file}
-
-        """
-
-rule assemblytics:
-    threads:1
-    input:
-        delta_files = "{samples}.delta"
-    params:
-        prefix = "{samples}"
-    output:
-        dotplot = "{samples}.Assemblytics.Dotplot_filtered.png"
-    message:
-        f"""
-             Running {{rule}}
-                Input:
-                    - Fasta : {{input.delta_files}}
-                Output:
-                    - dotplot: {{output.dotplot}}
-                Others
-                    - Threads : {{threads}}
-
-            """
-    envmodules:
-        "assemblytics/1.2.1"
-    shell:
-        "Assemblytics {input.delta_files} {params.prefix} 10000 50 10000"
 '''
 
 rule minimap2:
@@ -816,3 +765,64 @@ rule remove_contigs:
             """
     shell:
         "python function_remove.py {input.fasta_file_masked} {input.fasta} {output.final_files} {params.threshold}"
+
+rule mummer:
+    """run mummer"""
+    threads:get_threads("mummer", 1)
+    input:
+        final_files = f"{output_dir}5_FINAL_FASTA/{{samples}}.fasta",
+        reference_file = ref
+    output:
+        delta = f"{output_dir}7_ALIGNMENTS/{{samples}}.delta"
+    message:
+            f"""
+             Running {{rule}}
+                Input:
+                    - Fasta : {{input.final_files}}
+                Output:
+                    - deltafile: {{output.delta}}
+                Others
+                    - Threads : {{threads}}
+
+            """
+    log :
+        error =  f'{log_dir}mummer/mummer_{{samples}}.e',
+        output = f'{log_dir}mummer/mummer_{{samples}}.o'
+    envmodules:
+        "mummer4/4.0.0rc1"
+    shell:
+        """
+            nucmer --delta {output.delta} {input.reference_file} {input.final_files} 1>{log.output} 2>{log.error}
+
+        """
+
+rule assemblytics:
+    threads:get_threads("assemblytics", 1)
+    input:
+        delta = f"{output_dir}7_ALIGNMENTS/{{samples}}.delta"
+    params:
+        prefix = f"report_{{samples}}",
+        directory = f"{output_dir}7_ALIGNMENTS/{{samples}}_assemblytics/"
+    output:
+        dotplot = f"{output_dir}7_ALIGNMENTS/{{samples}}_assemblytics/report_{{samples}}.Assemblytics.Dotplot_filtered.png"
+    message:
+        f"""
+             Running {{rule}}
+                Input:
+                    - delta : {{input.delta}}
+                Output:
+                    - dotplot: {{output.dotplot}}
+                Others
+                    - Threads : {{threads}}
+
+            """
+    log :
+        error =  f'{log_dir}assemblytics/assemblytics_{{samples}}.e',
+        output = f'{log_dir}assemblytics/assemblytics_{{samples}}.o'
+    envmodules:
+        "assemblytics/1.2.1"
+    shell:
+        '''
+        Assemblytics {input.delta} {params.prefix} 10000 50 10000
+        mv {params.prefix}* {params.directory}
+        '''
