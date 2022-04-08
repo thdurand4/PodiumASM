@@ -82,6 +82,15 @@ cat(paste(knit(text = toto,quiet=T), collapse = '\n'))
 ```
 
 
+# BUSCO RESULTS{.tabset .tabset-fade}
+
+```{r, Generation figure busco R, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+figure_busco =snakemake@input$figure_busco
+knitr::include_graphics(figure_busco)
+
+```
+
 
 <footer>
         <p style="text-align: center;">Snakemake report of workflow <a target="_blank" href="https://github.com/thdurand4/assembly_finder">AssemblyFinder</a> created by <a target="_blank" href="https://github.com/thdurand4">Théo DURAND</a> and <a target="_blank" href="https://github.com/SimonBache">Simon BACHE</a></p>

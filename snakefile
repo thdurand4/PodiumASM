@@ -713,7 +713,8 @@ rule genome_stats:
 rule report_stats_contig:
     threads: get_threads('report', 1)
     input:
-         csv_all_dir = rules.genome_stats.params.csv_path
+         csv_all_dir = rules.genome_stats.params.csv_path,
+         figure_busco = rules.busco_figure.output.figure
     output:
         report = f"{output_dir}2_GENOME_STATS/report.html"
     log:
@@ -726,6 +727,7 @@ rule report_stats_contig:
             Running {{rule}}
                 Input:
                     - csv : {{input.csv_all_dir}}
+                    - figure : {{input.figure_busco}}
                 Output:
                     - report : {{output.report}}
                 Others
