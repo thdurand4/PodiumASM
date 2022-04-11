@@ -29,7 +29,7 @@ for element in ID:
 list_var = [deletions, insertion, inversion, duplications, translocations]
 index_data = ['deletions', 'insertions', 'inversions', 'duplications', 'translocations']
 data = pd.DataFrame(list_var, index = index_data)
-data.to_csv(f"{sys.argv[2]}.csv")
+data.to_csv(f"{sys.argv[2]}")
 
 
 
