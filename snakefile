@@ -582,6 +582,30 @@ rule sniffles:
     shell:
         "sniffles -i {input.bam_file} -v {output.vcf_file} -t {threads}"
 
+rule variant_calling:
+    threads:get_threads("variant_calling", 1)
+    input:
+        vcf_file = f"{output_dir}4_STRUCTURAL_VAR/sniffles/{{samples}}.vcf"
+    output:
+        csv_file = f"{output_dir}4_STRUCTURAL_VAR/csv_variants/{{samples}}_variants.csv"
+    log :
+        error =  f'{log_dir}variants/variants_{{samples}}.e',
+        output = f'{log_dir}variants/variants_{{samples}}.o'
+    message:
+        f"""
+             Running {{rule}}
+                Input:
+                    - vcf : {{input.vcf_file}}
+                Output:
+                    - csv_file: {{output.csv_file}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+
+            """
+    shell:
+        "python vcf_parse.py {input.vcf} {output.csv_file}"
 
 rule align_assembly:
     threads: get_threads("align_assembly",5)
