@@ -72,7 +72,8 @@ rule finale:
         report_html = f"{output_dir}6_MAPPING_ILLUMINA/STATS/report.html",
         coverage_files = expand(f"{output_dir}2_GENOME_STATS/COVERAGE/{{samples}}_coverage", samples = ASSEMBLIES),
         csv_stat_final = expand(f"{output_dir}2_GENOME_STATS/STAT_CSV/{{samples}}.csv", samples = ASSEMBLIES),
-        report_stat_final = f"{output_dir}2_GENOME_STATS/report.html"
+        report_stat_final = f"{output_dir}2_GENOME_STATS/report.html",
+        vcf_list = expand(f"{output_dir}4_STRUCTURAL_VAR/csv_variants/{{samples}}_variants.csv", samples = ASSEMBLIES)
 
 rule rename_contigs:
     threads: get_threads("rename_contigs",2)
