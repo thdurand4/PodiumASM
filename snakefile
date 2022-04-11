@@ -685,8 +685,6 @@ rule genome_stats:
         depth_mean = rules.coverage.output.coverage_file
     output:
         csv_stat = f"{output_dir}2_GENOME_STATS/STAT_CSV/{{samples}}.csv"
-    params:
-        csv_path = f"{output_dir}2_GENOME_STATS/STAT_CSV"
     log :
         error =  f'{log_dir}stat_csv/csv_{{samples}}.e',
         output = f'{log_dir}stat_csv/csv_{{samples}}.o'
@@ -713,10 +711,11 @@ rule genome_stats:
 rule report_stats_contig:
     threads: get_threads('report', 1)
     input:
-         csv_all_dir = rules.genome_stats.params.csv_path,
          figure_busco = rules.busco_figure.output.figure
     output:
         report = f"{output_dir}2_GENOME_STATS/report.html"
+    params:
+        csv_all_dir = f"{output_dir}2_GENOME_STATS/STAT_CSV"
     log:
             error =  f'{log_dir}report_stats/report_stats.e',
             output = f'{log_dir}report_stats/report_stats.o'
@@ -726,7 +725,7 @@ rule report_stats_contig:
             f"""
             Running {{rule}}
                 Input:
-                    - csv : {{input.csv_all_dir}}
+                    - csv : {{params.csv_all_dir}}
                     - figure : {{input.figure_busco}}
                 Output:
                     - report : {{output.report}}
@@ -770,7 +769,7 @@ rule remove_contigs:
 
 rule mummer:
     """run mummer"""
-    threads:get_threads("mummer", 1)
+    threads:get_threads("mummer", 3)
     input:
         final_files = f"{output_dir}5_FINAL_FASTA/{{samples}}.fasta",
         reference_file = ref

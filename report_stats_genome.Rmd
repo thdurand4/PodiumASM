@@ -43,13 +43,13 @@ suppressMessages(library('stringr', warn.conflict = FALSE, quietly = TRUE))
 
 ```{r Importation des données, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 #file.quality <- snakemake@input$idxstats_resume
-file.quality = paste0(snakemake@input$csv_all_dir,"/")
+file.quality = paste0(snakemake@params$csv_all_dir,"/")
 #cvs_table <- read.table(file=file.quality, sep=",", header=TRUE)
 #file.quality.depth <- snakemake@input$depth_resume
 # file.quality.depth <- "/media/work/RattleSNP-git/script/all_mapping_stats_Depth_resume.csv"
 #datatableDepth <- read.table(file=file.quality.depth, sep="\t", header=TRUE)
 #csv_dir = "/home/durand/PycharmProjects/CIRAD/CSV_file"
-csv_dir_snakemake = paste0(snakemake@input$csv_all_dir,"/")
+csv_dir_snakemake = paste0(snakemake@params$csv_all_dir,"/")
 csv_files = list.files(csv_dir_snakemake)
 ```
 
