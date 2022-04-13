@@ -4,6 +4,7 @@
 .pydevproject
 .settings/
 venv
+config.yaml
 
 # snakemake
 .snakemake
