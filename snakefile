@@ -34,7 +34,7 @@ def get_threads(rule, default):
 
 def get_fastq_file(wildcards):
     """return if file provide from cleaning or direct sample"""
-    print(wildcards)
+    #print(wildcards)
     dico_mapping = {
                     "fasta": f"{fasta_dir}{{samples}}.fasta",
                     "index": rules.bwa_index.output
@@ -73,7 +73,7 @@ rule finale:
         coverage_files = expand(f"{output_dir}2_GENOME_STATS/COVERAGE/{{samples}}_coverage", samples = ASSEMBLIES),
         csv_stat_final = expand(f"{output_dir}2_GENOME_STATS/STAT_CSV/{{samples}}.csv", samples = ASSEMBLIES),
         report_stat_final = f"{output_dir}2_GENOME_STATS/report.html",
-        vcf_list = expand(f"{output_dir}4_STRUCTURAL_VAR/csv_variants/{{samples}}_variants.csv", samples = ASSEMBLIES)
+        vcf_stat = expand(f"{output_dir}4_STRUCTURAL_VAR/csv_variants/{{samples}}_variants.csv", samples = ASSEMBLIES)
 
 rule rename_contigs:
     threads: get_threads("rename_contigs",2)
@@ -606,7 +606,7 @@ rule variant_calling:
 
             """
     shell:
-        "python vcf_parse.py {input.vcf} {output.csv_file}"
+        "python vcf_parse.py {input.vcf_file} {output.csv_file}"
 
 rule align_assembly:
     threads: get_threads("align_assembly",5)
@@ -736,11 +736,14 @@ rule genome_stats:
 rule report_stats_contig:
     threads: get_threads('report', 1)
     input:
-         figure_busco = rules.busco_figure.output.figure
+         csv_stat_contig = expand(f"{output_dir}2_GENOME_STATS/STAT_CSV/{{samples}}.csv", samples = ASSEMBLIES),
+         figure_busco = rules.busco_figure.output.figure,
+         csv_structural_variant = expand(f"{output_dir}4_STRUCTURAL_VAR/csv_variants/{{samples}}_variants.csv", samples = ASSEMBLIES)
     output:
         report = f"{output_dir}2_GENOME_STATS/report.html"
     params:
-        csv_all_dir = f"{output_dir}2_GENOME_STATS/STAT_CSV"
+        csv_all_dir = f"{output_dir}2_GENOME_STATS/STAT_CSV",
+        csv_struct_dir = f"{output_dir}4_STRUCTURAL_VAR/csv_variants"
     log:
             error =  f'{log_dir}report_stats/report_stats.e',
             output = f'{log_dir}report_stats/report_stats.o'
