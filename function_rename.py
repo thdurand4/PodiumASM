@@ -1,27 +1,38 @@
-## Arg : fasta input file, new name of the new file
-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# @author Sebastien Ravel
+import click
 from Bio import SeqIO
-import sys
+from Bio.SeqRecord import SeqRecord
 
-ancien_names = []
-new_names = []
-dict = {}
-data = SeqIO.parse(sys.argv[1], "fasta")
+filename = "S3595_TR4_Peru22_complete_MAF000.fasta"
 
-for seq in data:
-    dict[len(str(seq.seq))] = seq
-dict = (sorted(dict.items(), key = lambda t:t[0], reverse=True))
 
-list_records = []
-for k in range(len(dict)):
-    list_records.append(dict[k][1])
+@click.command(context_settings={'help_option_names': ('-h', '--help'), "max_content_width": 800})
+@click.option('--fasta_input', '-i', default=None,
+              type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True, resolve_path=True),
+              required=True, show_default=True, help='Path to create tree file')
+@click.option('--fasta_output', '-o', default=None,
+              type=click.Path(exists=False, file_okay=True, dir_okay=False, readable=True, resolve_path=True),
+              required=True, show_default=True, help='Path to create tree file')
+def main(fasta_input, fasta_output):
+    # read fasta and save to dict
+    with open(fasta_input, "r") as handle:
+        record_dict = SeqIO.to_dict(SeqIO.parse(handle, "fasta"))
 
-x=[]
-for k in range(len(dict)):
-    x.append("contig_"+str(k+1))
+    # loop to extract seq len on dict[name] = len(seq)
+    dico_len_seq = {}
+    for seq_name in record_dict.keys():
+        if seq_name not in dico_len_seq:
+            dico_len_seq[seq_name] = len(record_dict[seq_name].seq)
 
-for k in range(len(list_records)):
-    list_records[k].id = x[k]
-    list_records[k].description = ""
+    # loop on sorted by len to write and rename contig
+    with open(fasta_output, "w") as output_handle:
+        for indice, seq_name in enumerate(sorted(dico_len_seq.keys(), key=dico_len_seq.get, reverse=True), start=1):
+            new_seq_name = f"contig_{indice}"
+            print(seq_name, indice, new_seq_name)
 
-SeqIO.write(list_records, sys.argv[2], 'fasta')
+            seqObj = record_dict[seq_name]
+            # print(dico_seq[seq_name])
+            record = SeqRecord(seqObj.seq, id=new_seq_name, name=new_seq_name, description="")
+            SeqIO.write(record_dict[seq_name], output_handle, "fasta")
