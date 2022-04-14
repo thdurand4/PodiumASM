@@ -9,11 +9,12 @@ from Bio.SeqRecord import SeqRecord
 @click.command(context_settings={'help_option_names': ('-h', '--help'), "max_content_width": 800})
 @click.option('--fasta_input', '-i', default=None,
               type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True, resolve_path=True),
-              required=True, show_default=True, help='Path to create tree file')
+              required=True, show_default=True, help='Path to input fasta')
 @click.option('--fasta_output', '-o', default=None,
               type=click.Path(exists=False, file_okay=True, dir_okay=False, readable=True, resolve_path=True),
-              required=True, show_default=True, help='Path to create tree file')
+              required=True, show_default=True, help='Path to create fasta rename to contig')
 def main(fasta_input, fasta_output):
+    """This programme renames fasta sequence name to contig_x from longest to smaller"""
     # read fasta and save to dict
     with open(fasta_input, "r") as handle:
         record_dict = SeqIO.to_dict(SeqIO.parse(handle, "fasta"))
@@ -34,6 +35,7 @@ def main(fasta_input, fasta_output):
             # print(dico_seq[seq_name])
             record = SeqRecord(seqObj.seq, id=new_seq_name, name=new_seq_name, description="")
             SeqIO.write(record, output_handle, "fasta")
+
 
 if __name__ == '__main__':
     main()
