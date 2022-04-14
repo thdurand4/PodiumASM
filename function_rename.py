@@ -5,8 +5,6 @@ import click
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 
-filename = "S3595_TR4_Peru22_complete_MAF000.fasta"
-
 
 @click.command(context_settings={'help_option_names': ('-h', '--help'), "max_content_width": 800})
 @click.option('--fasta_input', '-i', default=None,
@@ -35,4 +33,7 @@ def main(fasta_input, fasta_output):
             seqObj = record_dict[seq_name]
             # print(dico_seq[seq_name])
             record = SeqRecord(seqObj.seq, id=new_seq_name, name=new_seq_name, description="")
-            SeqIO.write(record_dict[seq_name], output_handle, "fasta")
+            SeqIO.write(record, output_handle, "fasta")
+
+if __name__ == '__main__':
+    main()
