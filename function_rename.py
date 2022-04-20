@@ -29,7 +29,7 @@ def main(fasta_input, fasta_output):
     with open(fasta_output, "w") as output_handle:
         for indice, seq_name in enumerate(sorted(dico_len_seq.keys(), key=dico_len_seq.get, reverse=True), start=1):
             new_seq_name = f"contig_{indice}"
-            print(seq_name, indice, new_seq_name)
+            #print(seq_name, indice, new_seq_name)
 
             seqObj = record_dict[seq_name]
             # print(dico_seq[seq_name])

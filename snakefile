@@ -77,7 +77,7 @@ rule rename_contigs:
 
             """
     shell:
-        "python function_rename.py {input.assembly} {output.sorted_fasta} 1>{log.output} 2>{log.error}"
+        "python function_rename.py -i {input.assembly} -o {output.sorted_fasta} 1>{log.output} 2>{log.error}"
 
 rule busco:
     """make quast report for our strain assembly"""
@@ -724,7 +724,7 @@ rule remove_contigs:
 
             """
     shell:
-        "python function_remove.py {input.fasta_file_masked} {input.fasta} {output.final_files} {params.threshold}"
+        "python function_remove.py -m {input.fasta_file_masked} -f {input.fasta} -o {output.final_files} -n {params.threshold}"
 
 rule mummer:
     """run mummer"""

@@ -37,7 +37,7 @@ def main(fasta_masked, fasta_no_masked, fasta_output, max_n):
         else:
             nb_remove += 1
 
-    print(f"Remove: {nb_remove}\nKeep: {nb_keep}\nTotal: {nb_remove + nb_keep}\n")
+    #print(f"Remove: {nb_remove}\nKeep: {nb_keep}\nTotal: {nb_remove + nb_keep}\n")
 
 
 if __name__ == '__main__':
