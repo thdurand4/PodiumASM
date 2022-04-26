@@ -52,7 +52,8 @@ BWA_INDEX = ['amb','ann','bwt','pac','sa']
 
 rule finale:
     input:
-        report_stat_final = f"{output_dir}2_GENOME_STATS/report.html"
+        report_stat_final = f"{output_dir}2_GENOME_STATS/report.html",
+        tapes = expand(f"{output_dir}2_GENOME_STATS/TAPESTRY/{{samples}}/{{samples}}_tapestry_report.html", samples = ASSEMBLIES)
 
 rule rename_contigs:
     threads: get_threads("rename_contigs",2)
@@ -329,7 +330,7 @@ rule samtools_depth:
                     - LOG output: {{log.output}}
             """
     envmodules:
-        "samtools/1.9"
+        "samtools/1.14"
     shell:
             """
                 samtools depth -@ {threads} {params.other_options} {input.bam} | tee {output.txt_file} 1>{log.output} 2>{log.error}
@@ -419,33 +420,6 @@ rule quast_full_contigs:
             """
                 quast {input.fasta} -t {threads} {params.other_option_quast} -r {input.reference} -o {params.dir}
             """
-
-'''
-rule tapestry:
-    threads:3
-    input:
-        assemblies = "{samples}_renamed.fasta",
-        reads = long_reads_dir + "{samples}.fastq.gz"
-    output:
-        tapestry_report = tapestry_dir + "{samples}/" + "{samples}.tapestry_report.html"
-    params:
-        directory = tapestry_dir + "{samples}/"
-    message:
-        f"""
-             Running {{rule}}
-                Input:
-                    - assemblies : {{input.assemblies}}
-                Output:
-                    - tapestry_report: {{output.tapestry_report}}
-                Others
-                    - Threads : {{threads}}
-
-            """
-    shell:
-        "weave -a {input.assemblies} -r {input.reads} -f -c 3 -o {params.directory} -t TAACCC TTAGGG"
-'''
-
-
 rule minimap2:
     threads:get_threads("minimap2", 5)
     input:
@@ -746,6 +720,8 @@ rule mummer:
                     - deltafile: {{output.delta}}
                 Others
                     - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
 
             """
     log :
@@ -765,7 +741,7 @@ rule assemblytics:
         delta = rules.mummer.output.delta
     params:
         prefix = f"report_{{samples}}",
-        directory = f"{output_dir}7_ALIGNMENTS/{{samples}}_assemblytics/",
+        directory_as = f"{output_dir}7_ALIGNMENTS/{{samples}}_assemblytics/",
         option_assemblytics = config["TOOLS_PARAM"]["ASSEMBLYTICS"]
     output:
         dotplot = f"{output_dir}7_ALIGNMENTS/{{samples}}_assemblytics/report_{{samples}}.Assemblytics.Dotplot_filtered.png"
@@ -778,6 +754,8 @@ rule assemblytics:
                     - dotplot: {{output.dotplot}}
                 Others
                     - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
 
             """
     log :
@@ -788,12 +766,47 @@ rule assemblytics:
     shell:
         """
         Assemblytics {input.delta} {params.prefix} {params.option_assemblytics}
-        mv {params.prefix}* {params.directory}
+        mv {params.prefix}* {params.directory_as}
         """
 
+rule tapestry:
+    threads: get_threads("tapestry", 8)
+    input:
+        assemblies = rules.rename_contigs.output.sorted_fasta,
+        reads = f"{long_reads_dir}{{samples}}.fastq.gz"
+    output:
+        tapestry_report = f"{output_dir}2_GENOME_STATS/TAPESTRY/{{samples}}/{{samples}}_tapestry_report.html"
+    params:
+        tapestry_dir = f"{output_dir}2_GENOME_STATS/TAPESTRY/{{samples}}/",
+        other_option_tapestry = config["TOOLS_PARAM"]["TAPESTRY"]
+    message:
+        f"""
+             Running {{rule}}
+                Input:
+                    - assemblies : {{input.assemblies}}
+                    - long reads : {{input.reads}}
+                Output:
+                    - tapestry_report: {{output.tapestry_report}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+
+            """
+    log :
+        error =  f'{log_dir}tapestry/tapestry_{{samples}}.e',
+        output = f'{log_dir}tapestry/tapestry_{{samples}}.o'
+    envmodules:
+        "minimap2",
+        "samtools"
+    shell:
+        """
+        weave -a {input.assemblies} -r {input.reads} -c {threads} -o {params.tapestry_dir} {params.other_option_tapestry}
+        mv {params.tapestry_dir}.tapestry_report.html {params.tapestry_dir}{wildcards.samples}_tapestry_report.html
+        """
 
 rule report_stats_contig:
-    threads: get_threads('report', 1)
+    threads: get_threads('report_stats_contig', 1)
     input:
          csv_stat_contig = expand(rules.genome_stats.output.csv_stat, samples = ASSEMBLIES),
          figure_busco = rules.busco_figure.output.figure,
@@ -828,3 +841,4 @@ rule report_stats_contig:
             """
     script:
         """report_stats_genome.Rmd"""
+

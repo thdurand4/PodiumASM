@@ -59,7 +59,7 @@ datatableDepth <- read.table(file=depth_resume, sep="\t", header=TRUE)
 ```
 
 
-```{r Visualisation des taille de librairie, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r Stats contigs, echo=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 toto = NULL
 for (i in 1:length(csv_files)) {
   #cat(sprintf(paste0("## ",csv_files[i],"\n\n")))
