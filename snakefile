@@ -11,7 +11,7 @@ db_busco = config["TOOLS_PARAM"]["BUSCO_DATABASE"]
 lib_dir = config["DATA"]["REPEAT_LIB"]
 long_reads_dir = config["DATA"]["LONG_READS"]
 short_read_dir = config["DATA"]["SHORT_READS"]
-
+repeat_database_name = config["DATA"]["REPEAT_DB"]
 log_dir = f"{output_dir}LOGS/"
 
 
@@ -54,6 +54,7 @@ rule finale:
     input:
         report_stat_final = f"{output_dir}2_GENOME_STATS/report.html",
         tapes = expand(f"{output_dir}2_GENOME_STATS/TAPESTRY/{{samples}}/{{samples}}_tapestry_report.html", samples = ASSEMBLIES)
+        repeat_db = f"{output_dir}3_REPEATMASKER/repeat_database/{repeat_database_name}-families.fa"
 
 rule rename_contigs:
     threads: get_threads("rename_contigs",2)
@@ -608,6 +609,44 @@ rule coverage:
     shell:
         "samtools coverage {params.option_samtools_coverage} {input.bam_file} -o {output.coverage_file}"
 
+rule repeatmodeler:
+    threads: get_threads("repeatmodeler", 12)
+    input:
+        fasta_files = expand(rules.rename_contigs.output.sorted_fasta, samples = ASSEMBLIES)
+    output:
+        database = f"{output_dir}3_REPEATMASKER/repeat_database/{repeat_database_name}-families.fa",
+        fasta_concat = f"{output_dir}3_REPEATMASKER/repeat_database/concat_file.fasta"
+    params:
+        db_name = repeat_database_name,
+        option_build_db = config["TOOLS_PARAM"]["DATABASE_REPEAT_MODELER"],
+        option_repeat_modeler = config["TOOLS_PARAM"]["REPEATMODELER"],
+        db_dir = f"{output_dir}3_REPEATMASKER/repeat_database/"
+    log :
+        error =  f'{log_dir}repeat_modeler/repeat_modeler.e',
+        output = f'{log_dir}repeat_modeler/repeat_modeler.o'
+    envmodules:
+        "repeatmodeler/2.0.3"
+    message:
+        f"""
+             Running {{rule}}
+                Input:
+                    - fasta : {{input.fasta_files}}
+                Output:
+                    - database: {{output.database}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+
+            """
+    shell:
+        """
+        cat {input.fasta_files} > {output.fasta_concat}
+        BuildDatabase -name {params.db_name} {params.option_build_db} {output.fasta_concat}
+        RepeatModeler {params.option_repeat_modeler} -database {params.db_name}
+        mv {params.db_name}* {params.db_dir}
+        """
+
 
 rule repeatmasker:
     threads: get_threads("repeatmasker", 5)
@@ -615,7 +654,7 @@ rule repeatmasker:
         fasta_file = rules.rename_contigs.output.sorted_fasta
     params:
         directory = f"{output_dir}3_REPEATMASKER/{{samples}}",
-        lib_file = f"{lib_dir}",
+        lib_file = rules.repeat_modeler.output.database,
         other_option_RM = config["TOOLS_PARAM"]["REPEAT_MASKER"]
     output:
         fasta_masked = f"{output_dir}3_REPEATMASKER/{{samples}}/{{samples}}.fasta.masked"
