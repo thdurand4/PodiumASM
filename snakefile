@@ -47,7 +47,7 @@ def get_fastq_file(wildcards):
                 })
     # print(dico_mapping)
     return dico_mapping
-aa
+
 
 def get_fastq_file_long_read(wildcards):
     """return if file provide from cleaning or direct sample"""
