@@ -1,17 +1,17 @@
 configfile: "config.yaml"
 #print(config)
 #print(cluster_config)
-from function_snakemake import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
+from scripts.function_snakemake import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
 
 
 fasta_dir = config["DATA"]["ASSEMBLY"]
 ref = config["DATA"]["REFERENCE"]
 output_dir = config["DATA"]["OUTPUT"]
 db_busco = config["TOOLS_PARAM"]["BUSCO_DATABASE"]
-lib_dir = config["DATA"]["REPEAT_LIB"]
 long_reads_dir = config["DATA"]["LONG_READS"]
 short_read_dir = config["DATA"]["SHORT_READS"]
 repeat_database_name = config["DATA"]["REPEAT_DB"]
+script_dir = config["DATA"]["SCRIPTS"]
 log_dir = f"{output_dir}LOGS/"
 
 
@@ -34,34 +34,51 @@ def get_threads(rule, default):
 
 def get_fastq_file(wildcards):
     """return if file provide from cleaning or direct sample"""
-    #print(wildcards)
+    test = str(wildcards)
+    split_wildcard = test.split("_")
+    #print(split_wildcard)
     dico_mapping = {
                     "fasta": f"{fasta_dir}{{samples}}.fasta",
                     "index": rules.bwa_index.output
                     }
     dico_mapping.update({
-                    "R1" :f"{short_read_dir}{{samples}}_R1.fastq.gz",
-                    "R2" :f"{short_read_dir}{{samples}}_R2.fastq.gz"
+                    "R1" :f"{short_read_dir}{split_wildcard[0]}_R1.fastq.gz",
+                    "R2" :f"{short_read_dir}{split_wildcard[0]}_R2.fastq.gz"
                 })
     # print(dico_mapping)
+    return dico_mapping
+
+
+def get_fastq_file_long_read(wildcards):
+    """return if file provide from cleaning or direct sample"""
+    test = str(wildcards)
+    split_wildcard = test.split("_")
+    #print(split_wildcard)
+    dico_mapping = {
+                    "fasta_test": f"{fasta_dir}{{samples}}.fasta"
+                    }
+
+    dico_mapping.update({
+                    "reads" :f"{long_reads_dir}{split_wildcard[0]}.fastq.gz"
+                })
+    #print(dico_mapping)
     return dico_mapping
 
 ASSEMBLIES, = glob_wildcards(fasta_dir+"{samples}.fasta", followlinks=True)
 #print(ASSEMBLIES)
 BWA_INDEX = ['amb','ann','bwt','pac','sa']
 
+
 rule finale:
     input:
-        report_stat_final = f"{output_dir}2_GENOME_STATS/report.html",
-        tapes = expand(f"{output_dir}2_GENOME_STATS/TAPESTRY/{{samples}}/{{samples}}_tapestry_report.html", samples = ASSEMBLIES)
-        repeat_db = f"{output_dir}3_REPEATMASKER/repeat_database/{repeat_database_name}-families.fa"
+        report_stat_final = f"{output_dir}2_GENOME_STATS/report.html"
 
 rule rename_contigs:
     threads: get_threads("rename_contigs",2)
     input:
         assembly = f"{fasta_dir}{{samples}}.fasta"
     output:
-        sorted_fasta = f"{output_dir}1_FASTA_SORTED/{{samples}}.fasta"
+        sorted_fasta = f"{output_dir}1_FASTA_SORTED/{{samples}}.fasta",
     log :
         error =  f'{log_dir}fasta_sorted/fasta_sorted_{{samples}}.e',
         output = f'{log_dir}fasta_sorted/fasta_sorted_{{samples}}.o'
@@ -79,19 +96,20 @@ rule rename_contigs:
 
             """
     shell:
-        "python function_rename.py -i {input.assembly} -o {output.sorted_fasta} 1>{log.output} 2>{log.error}"
+        f"python {script_dir}function_rename.py -i {{input.assembly}} -o {{output.sorted_fasta}} 1>{{log.output}} 2>{{log.error}}"
 
 rule busco:
     """make quast report for our strain assembly"""
     threads: get_threads("busco", 8)
     input:
-            fasta = f"{output_dir}1_FASTA_SORTED/"
+            fasta_sorted = expand(rules.rename_contigs.output.sorted_fasta, samples = ASSEMBLIES)
     output:
             busco_out = expand(f"{output_dir}2_GENOME_STATS/BUSCO/result_busco/{{samples}}.fasta/short_summary.specific.{db_busco}.{{samples}}.fasta.txt",samples = ASSEMBLIES)
     params:
             busco_out_path = f"{output_dir}2_GENOME_STATS/BUSCO/",
             busco_result = f"result_busco",
-            other_option_busco = config["TOOLS_PARAM"]["BUSCO"]
+            other_option_busco = config["TOOLS_PARAM"]["BUSCO"],
+            fasta = f"{output_dir}1_FASTA_SORTED/"
     log :
             error =  f'{log_dir}busco/busco.e',
             output = f'{log_dir}busco/busco.o'
@@ -99,7 +117,7 @@ rule busco:
             f"""
              Running {{rule}}
                 Input:
-                    - Fasta : {{input.fasta}}
+                    - Fasta : {{params.fasta}}
                 Output:
                     - sa_file: {{output.busco_out}}
                 Others
@@ -111,7 +129,7 @@ rule busco:
             "busco/5.1.2"
     shell:
             """
-                busco -c {threads} -i {input.fasta} {params.other_option_busco} -l {db_busco} -m genome --out_path {params.busco_out_path} -o {params.busco_result} --download_path {params.busco_out_path} -f 1>{log.output} 2>{log.error}
+                busco -c {threads} -i {params.fasta} {params.other_option_busco} -l {db_busco} -m genome --out_path {params.busco_out_path} -o {params.busco_result} --download_path {params.busco_out_path} -f 1>{log.output} 2>{log.error}
             """
 
 rule busco_figure:
@@ -424,8 +442,8 @@ rule quast_full_contigs:
 rule minimap2:
     threads:get_threads("minimap2", 5)
     input:
-        reference_file = ref,
-        reads = f"{long_reads_dir}{{samples}}.fastq.gz"
+        unpack(get_fastq_file_long_read),
+        reference_file = ref
     output:
         bam_file = f"{output_dir}4_STRUCTURAL_VAR/minimap2/{{samples}}_sorted.bam"
     log :
@@ -540,12 +558,12 @@ rule variant_calling:
 
             """
     shell:
-        "python vcf_parse.py {input.vcf_file} {output.csv_file}"
+        f"python {script_dir}vcf_parse.py {{input.vcf_file}} {{output.csv_file}}"
 
 rule align_assembly:
     threads: get_threads("align_assembly",5)
     input:
-        reads = f"{long_reads_dir}{{samples}}.fastq.gz",
+        unpack(get_fastq_file_long_read),
         fasta = rules.rename_contigs.output.sorted_fasta
     output:
         bam_file = f"{output_dir}2_GENOME_STATS/COVERAGE/{{samples}}_sorted.bam"
@@ -651,10 +669,10 @@ rule repeatmodeler:
 rule repeatmasker:
     threads: get_threads("repeatmasker", 5)
     input:
-        fasta_file = rules.rename_contigs.output.sorted_fasta
+        fasta_file = rules.rename_contigs.output.sorted_fasta,
+        lib_file = rules.repeatmodeler.output.database
     params:
         directory = f"{output_dir}3_REPEATMASKER/{{samples}}",
-        lib_file = rules.repeat_modeler.output.database,
         other_option_RM = config["TOOLS_PARAM"]["REPEAT_MASKER"]
     output:
         fasta_masked = f"{output_dir}3_REPEATMASKER/{{samples}}/{{samples}}.fasta.masked"
@@ -677,7 +695,7 @@ rule repeatmasker:
     envmodules:
         "repeatmasker/4.1.2.p1"
     shell:
-        "RepeatMasker -lib {params.lib_file} {params.other_option_RM} {input.fasta_file} -dir {params.directory}"
+        "RepeatMasker -lib {input.lib_file} {params.other_option_RM} {input.fasta_file} -dir {params.directory}"
 
 
 rule genome_stats:
@@ -707,7 +725,7 @@ rule genome_stats:
 
             """
     shell:
-        "python summary_contigs.py {input.mask} {input.ordered} {input.depth_mean} {output.csv_stat}"
+        f"python {script_dir}summary_contigs.py {{input.mask}} {{input.ordered}} {{input.depth_mean}} {{output.csv_stat}}"
 
 
 rule remove_contigs:
@@ -737,7 +755,7 @@ rule remove_contigs:
 
             """
     shell:
-        "python function_remove.py -m {input.fasta_file_masked} -f {input.fasta} -o {output.final_files} -n {params.threshold}"
+        f"python {script_dir}function_remove.py -m {{input.fasta_file_masked}} -f {{input.fasta}} -o {{output.final_files}} -n {{params.threshold}}"
 
 rule mummer:
     """run mummer"""
@@ -811,8 +829,8 @@ rule assemblytics:
 rule tapestry:
     threads: get_threads("tapestry", 8)
     input:
-        assemblies = rules.rename_contigs.output.sorted_fasta,
-        reads = f"{long_reads_dir}{{samples}}.fastq.gz"
+        unpack(get_fastq_file_long_read),
+        assemblies = rules.rename_contigs.output.sorted_fasta
     output:
         tapestry_report = f"{output_dir}2_GENOME_STATS/TAPESTRY/{{samples}}/{{samples}}_tapestry_report.html"
     params:
@@ -853,7 +871,8 @@ rule report_stats_contig:
          quast = rules.quast_full_contigs.output.quast_results,
          dotplot_final = expand(rules.assemblytics.output.dotplot, samples =ASSEMBLIES),
          depth_resume = rules.merge_bam_stats.output.csv_resume_merge,
-         idxstats_resume = rules.merge_idxstats.output.csv_resume_merge
+         idxstats_resume = rules.merge_idxstats.output.csv_resume_merge,
+         tapestry_out = expand(rules.tapestry.output.tapestry_report, samples = ASSEMBLIES)
     output:
         report = f"{output_dir}2_GENOME_STATS/report.html"
     params:
@@ -863,8 +882,8 @@ rule report_stats_contig:
     log:
             error =  f'{log_dir}report_stats/report_stats.e',
             output = f'{log_dir}report_stats/report_stats.o'
-    # envmodules:
-        # tools_config["MODULES"]["R"]
+    envmodules:
+        "r"
     message:
             f"""
             Running {{rule}}
@@ -879,5 +898,5 @@ rule report_stats_contig:
                     - LOG output: {{log.output}}
             """
     script:
-        """report_stats_genome.Rmd"""
+        f"""{script_dir}report_stats_genome.Rmd"""
 
