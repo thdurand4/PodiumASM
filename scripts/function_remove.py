@@ -23,6 +23,7 @@ def main(fasta_masked, fasta_no_masked, fasta_output, max_n):
     dico_record = SeqIO.to_dict(SeqIO.parse(fasta_no_masked, "fasta"))
     nb_remove = 0
     nb_keep = 0
+    list_keep = []
     for id_masked in dico_record_masked:
         seq_record_masked = dico_record_masked[id_masked]
         try:
@@ -32,10 +33,11 @@ def main(fasta_masked, fasta_no_masked, fasta_output, max_n):
         seq = str(seq_record_masked.seq)
         n_percent = (seq.count("N") / len(seq) * 100)
         if n_percent <= max_n * 100:
-            SeqIO.write(seq_record, fasta_output, 'fasta')
+            list_keep.append(seq_record)
             nb_keep += 1
         else:
             nb_remove += 1
+    SeqIO.write(list_keep, fasta_output, 'fasta')
 
     #print(f"Remove: {nb_remove}\nKeep: {nb_keep}\nTotal: {nb_remove + nb_keep}\n")
 
