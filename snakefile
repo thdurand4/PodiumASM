@@ -2,7 +2,7 @@ configfile: "config.yaml"
 #print(config)
 #print(cluster_config)
 from scripts.function_snakemake import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
-
+#test
 
 fasta_dir = config["DATA"]["ASSEMBLY"]
 ref = config["DATA"]["REFERENCE"]
