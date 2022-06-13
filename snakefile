@@ -445,7 +445,7 @@ rule minimap2:
         unpack(get_fastq_file_long_read),
         reference_file = ref
     output:
-        bam_file = f"{output_dir}4_STRUCTURAL_VAR/minimap2/{{samples}}_sorted.bam"
+        bam_file = temp(f"{output_dir}4_STRUCTURAL_VAR/minimap2/{{samples}}_sorted.bam")
     log :
         error =  f'{log_dir}minimap2/minimap2_{{samples}}.e',
         output = f'{log_dir}minimap2/minimap2_{{samples}}.o'
@@ -592,7 +592,7 @@ rule align_assembly:
         unpack(get_fastq_file_long_read),
         fasta = rules.rename_contigs.output.sorted_fasta
     output:
-        bam_file = f"{output_dir}2_GENOME_STATS/COVERAGE/{{samples}}_sorted.bam"
+        bam_file = temp(f"{output_dir}2_GENOME_STATS/COVERAGE/{{samples}}_sorted.bam")
     params:
         option_minimap2 = config["TOOLS_PARAM"]["MINIMAP2_ASSEMBLY"],
         option_view = config["TOOLS_PARAM"]["SAMTOOLS_VIEW_LONG_READ_ASSEMBLY"],
