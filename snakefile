@@ -10,7 +10,7 @@ output_dir = config["DATA"]["OUTPUT"]
 db_busco = config["TOOLS_PARAM"]["BUSCO_DATABASE"]
 long_reads_dir = config["DATA"]["LONG_READS"]
 short_read_dir = config["DATA"]["SHORT_READS"]
-repeat_database_name = config["DATA"]["REPEAT_DB"]
+repeat_database = config["DATA"]["REPEAT_DB"]
 script_dir = config["DATA"]["SCRIPTS"]
 log_dir = f"{output_dir}LOGS/"
 
@@ -653,6 +653,7 @@ rule coverage:
     shell:
         "samtools coverage {params.option_samtools_coverage} {input.bam_file} -o {output.coverage_file}"
 
+'''
 rule repeatmodeler:
     threads: get_threads("repeatmodeler", 12)
     input:
@@ -690,13 +691,13 @@ rule repeatmodeler:
         RepeatModeler {params.option_repeat_modeler} -database {params.db_name}
         mv {params.db_name}* {params.db_dir}
         """
-
+'''
 
 rule repeatmasker:
     threads: get_threads("repeatmasker", 5)
     input:
         fasta_file = rules.rename_contigs.output.sorted_fasta,
-        lib_file = rules.repeatmodeler.output.database
+        lib_file = repeat_database
     params:
         directory = f"{output_dir}3_REPEATMASKER/{{samples}}",
         other_option_RM = config["TOOLS_PARAM"]["REPEAT_MASKER"]
