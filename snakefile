@@ -560,6 +560,32 @@ rule variant_calling:
     shell:
         f"python {script_dir}vcf_parse.py {{input.vcf_file}} {{output.csv_file}}"
 
+rule variant_per_contig:
+    threads: get_threads("variant_per_contig", 1)
+    input:
+        vcf_file = rules.sniffles.output.vcf_file,
+        ref_fasta = ref
+    output:
+        csv_var_per_contig=f"{output_dir}4_STRUCTURAL_VAR/csv_variants/{{samples}}_variants_per_contig.csv"
+    log:
+        error=f'{log_dir}variants/variants_per_contig_{{samples}}.e',
+        output=f'{log_dir}variants/variants_per_contig_{{samples}}.o'
+
+    message:
+        f"""
+                 Running {{rule}}
+                    Input:
+                        - vcf : {{input.vcf_file}}
+                    Output:
+                        - csv_file: {{output.csv_var_per_contig}}
+                    Others
+                        - Threads : {{threads}}
+                        - LOG error: {{log.error}}
+                        - LOG output: {{log.output}}
+
+                """
+    shell: f"python {script_dir}vcf_contigs.py -v {{input.vcf_file}} -r {{input.ref_fasta}} -o {{output.csv_var_per_contig}}"
+
 rule align_assembly:
     threads: get_threads("align_assembly",5)
     input:
@@ -872,7 +898,8 @@ rule report_stats_contig:
          dotplot_final = expand(rules.assemblytics.output.dotplot, samples =ASSEMBLIES),
          depth_resume = rules.merge_bam_stats.output.csv_resume_merge,
          idxstats_resume = rules.merge_idxstats.output.csv_resume_merge,
-         tapestry_out = expand(rules.tapestry.output.tapestry_report, samples = ASSEMBLIES)
+         tapestry_out = expand(rules.tapestry.output.tapestry_report, samples = ASSEMBLIES),
+         csv_var_per_contig = expand(rules.variant_per_contig.output.csv_var_per_contig, samples = ASSEMBLIES)
     output:
         report = f"{output_dir}2_GENOME_STATS/report.html"
     params:
