@@ -1,9 +1,27 @@
-configfile: "config.yaml"
-#print(config)
-#print(cluster_config)
-from scripts.function_snakemake import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
-#test
+#!/usr/bin/env snakemake
+# -*- coding: utf-8 -*-
 
+from pathlib import Path
+from pprint import pprint as pp
+# load own functions
+import podiumASM
+from podiumASM.snakemake_module import Podium
+from podiumASM import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
+
+# pp(workflow.basedir)
+podium_obj = Podium(workflow, config)
+tools_config = podium_obj.tools_config
+cluster_config = podium_obj.cluster_config
+
+# print(podium_obj.export_use_yaml)
+# print for debug:
+# pp(podium_obj)
+# exit()
+# print(tools_config)
+# exit()
+
+###############################################################################
+# dir and suffix
 fasta_dir = config["DATA"]["ASSEMBLY"]
 ref = config["DATA"]["REFERENCE"]
 output_dir = config["DATA"]["OUTPUT"]
@@ -14,7 +32,16 @@ repeat_database = config["DATA"]["REPEAT_DB"]
 script_dir = config["DATA"]["SCRIPTS"]
 log_dir = f"{output_dir}LOGS/"
 
+# Change workdir to output path (slurm logs append on outdir)
+workdir:config["DATA"]["OUTPUT"]
 
+ASSEMBLIES, = glob_wildcards(fasta_dir+"{samples}.fasta", followlinks=True)
+#print(ASSEMBLIES)
+BWA_INDEX = ['amb','ann','bwt','pac','sa']
+
+#############################################
+# use threads define in cluster_config rule or rule default or default in snakefile
+#############################################
 def get_threads(rule, default):
     """
     give threads or 'cpus-per-task from cluster_config rule : threads to SGE and cpus-per-task to SLURM
@@ -28,8 +55,10 @@ def get_threads(rule, default):
             return int(cluster_config['__default__']['cpus-per-task'])
         elif '__default__' in cluster_config and 'threads' in cluster_config['__default__']:
             return int(cluster_config['__default__']['threads'])
-    if workflow.global_resources["_cores"]:
+    # if local
+    elif workflow.global_resources["_cores"]:
         return workflow.global_resources["_cores"]
+    # if cluster not rule and not default or local not _cores return value from call
     return default
 
 def get_fastq_file(wildcards):
@@ -64,17 +93,13 @@ def get_fastq_file_long_read(wildcards):
     #print(dico_mapping)
     return dico_mapping
 
-ASSEMBLIES, = glob_wildcards(fasta_dir+"{samples}.fasta", followlinks=True)
-#print(ASSEMBLIES)
-BWA_INDEX = ['amb','ann','bwt','pac','sa']
-
-
+# --- Main Build Rules --- #
 rule finale:
     input:
         report_stat_final = f"{output_dir}2_GENOME_STATS/report.html"
 
 rule rename_contigs:
-    threads: get_threads("rename_contigs",2)
+    threads: get_threads("rename_contigs", 1)
     input:
         assembly = f"{fasta_dir}{{samples}}.fasta"
     output:
@@ -82,18 +107,19 @@ rule rename_contigs:
     log :
         error =  f'{log_dir}fasta_sorted/fasta_sorted_{{samples}}.e',
         output = f'{log_dir}fasta_sorted/fasta_sorted_{{samples}}.o'
+    envmodules:
+        tools_config["MODULES"]["PYTHON3"]
     message:
             f"""
              Running {{rule}}
                 Input:
-                    - Fasta : {{input.assembly}}
+                    - Fasta: {{input.assembly}}
                 Output:
                     - Fasta_sorted: {{output.sorted_fasta}}
                 Others
-                    - Threads : {{threads}}
+                    - Threads: {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-
             """
     shell:
         f"python {script_dir}function_rename.py -i {{input.assembly}} -o {{output.sorted_fasta}} 1>{{log.output}} 2>{{log.error}}"
@@ -117,16 +143,16 @@ rule busco:
             f"""
              Running {{rule}}
                 Input:
-                    - Fasta : {{params.fasta}}
+                    - Fasta: {{params.fasta}}
                 Output:
                     - sa_file: {{output.busco_out}}
                 Others
-                    - Threads : {{threads}}
+                    - Threads: {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
             """
     envmodules:
-            "busco/5.1.2"
+            tools_config["MODULES"]["BUSCO"]
     shell:
             """
                 busco -c {threads} -i {params.fasta} {params.other_option_busco} -l {db_busco} -m genome --out_path {params.busco_out_path} -o {params.busco_result} --download_path {params.busco_out_path} -f 1>{log.output} 2>{log.error}
@@ -148,16 +174,16 @@ rule busco_figure:
             f"""
              Running {{rule}}
                 Input:
-                    - Fasta : {{input.txt_busco}}
+                    - Fasta: {{input.txt_busco}}
                 Output:
                     - figure_file: {{output.figure}}
                 Others
-                    - Threads : {{threads}}
+                    - Threads: {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
             """
     envmodules:
-            "busco/5.1.2"
+            tools_config["MODULES"]["BUSCO"]
     shell:
             """
                 mkdir -p {output_dir}2_GENOME_STATS/BUSCO/result_busco/{params.folder}
@@ -180,16 +206,16 @@ rule bwa_index:
             f"""
              Running {{rule}}
                 Input:
-                    - Fasta strain : {{input.fasta}}
+                    - Fasta: {{input.fasta}}
                 Output:
                     - sa_file: {{output}}
                 Others
-                    - Threads : {{threads}}
-                    - LOG error strain: {{log.error}}
-                    - LOG output strain: {{log.output}}
+                    - Threads: {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
             """
     envmodules:
-            "bwa/0.7.17"
+            tools_config["MODULES"]["BWA"]
     shell:
             """
                 bwa index {input.fasta} 1>{log.output} 2>{log.error}
@@ -213,28 +239,28 @@ rule bwa_mem_sort_bam:
             f"""
             Running {{rule}}
                 Input:
-                    - Fasta : {{input.fasta}}
+                    - Fasta: {{input.fasta}}
                     - R1: {{input.R1}}
                     - R2: {{input.R2}}
                 Output:
-                    - Bam strain: {{output.bam_file}}
+                    - Bam: {{output.bam_file}}
                 Params:
                     - other_options_bwa: {{params.other_options_bwa}}
                     - other_options_samtools_view: {{params.other_options_samtools_view}}
                     - other_options_samtools_sort: {{params.other_options_samtools_sort}}
                 Others
-                    - Threads : {{threads}}
+                    - Threads: {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
             """
     envmodules:
-            "bwa/0.7.17",
-            "samtools/1.9"
+            tools_config["MODULES"]["BWA"],
+            tools_config["MODULES"]["SAMTOOLS"]
     shell:
             """
-                    (bwa mem -t {threads} {input.fasta} {input.R1} {input.R2} -R '{params.rg}' |
-                    samtools view -@ {threads} {params.other_options_samtools_view} |
-                    samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file} ) 1>{log.output} 2>{log.error}
+                (bwa mem -t {threads} {input.fasta} {input.R1} {input.R2} -R '{params.rg}' |
+                samtools view -@ {threads} {params.other_options_samtools_view} |
+                samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file} ) 1>{log.output} 2>{log.error}
             """
 
 rule samtools_index_illumina:
@@ -251,16 +277,16 @@ rule samtools_index_illumina:
             f"""
             Running {{rule}}
                 Input:
-                    - Bam : {{input.bam}}
+                    - Bam: {{input.bam}}
                 Output:
-                    - Bai : {{output.bai}}
+                    - Bai: {{output.bai}}
                 Others
-                    - Threads : {{threads}}
+                    - Threads: {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
             """
     envmodules:
-        "samtools/1.9"
+            tools_config["MODULES"]["SAMTOOLS"]
     shell:
             """
                 samtools index -@ {threads} {input.bam} 1>{log.output} 2>{log.error}
@@ -283,16 +309,16 @@ rule samtools_idxstats:
             f"""
             Running {{rule}} for
                 Input:
-                    - Bam : {{input.bam}}
+                    - Bam: {{input.bam}}
                 Output:
-                    - txt : {{output.txt_file}}
+                    - txt: {{output.txt_file}}
                 Others
-                    - Threads : {{threads}}
+                    - Threads: {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
             """
     envmodules:
-        "samtools/1.9"
+            tools_config["MODULES"]["SAMTOOLS"]
     shell:
             """
                 samtools idxstats -@ {threads} {input.bam} | tee {output.txt_file} 1>{log.output} 2>{log.error}
@@ -302,7 +328,6 @@ rule merge_idxstats:
     threads : get_threads('merge_idxstats', 1)
     input :
             csv_resume = expand(rules.samtools_idxstats.output.txt_file , samples = ASSEMBLIES)
-
     output :
             csv_resume_merge = report(f"{output_dir}6_MAPPING_ILLUMINA/STATS/all_mapping_stats_resume.csv", category="Resume mapping info's")
     log:
@@ -340,16 +365,16 @@ rule samtools_depth:
             f"""
             Execute {{rule}} for
                 Input:
-                    - Bam : {{input.bam}}
+                    - Bam: {{input.bam}}
                 Output:
-                    - txt : {{output.txt_file}}
+                    - txt: {{output.txt_file}}
                 Others
-                    - Threads : {{threads}}
+                    - Threads: {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
             """
     envmodules:
-        "samtools/1.14"
+            tools_config["MODULES"]["SAMTOOLS"]
     shell:
             """
                 samtools depth -@ {threads} {params.other_options} {input.bam} | tee {output.txt_file} 1>{log.output} 2>{log.error}
@@ -570,7 +595,6 @@ rule variant_per_contig:
     log:
         error=f'{log_dir}variants/variants_per_contig_{{samples}}.e',
         output=f'{log_dir}variants/variants_per_contig_{{samples}}.o'
-
     message:
         f"""
                  Running {{rule}}
