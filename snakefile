@@ -200,7 +200,7 @@ rule bwa_mem_sort_bam:
     input:
             unpack(get_fastq_file)
     output:
-            bam_file =  f"{output_dir}6_MAPPING_ILLUMINA/BWA_MEM/{{samples}}.bam"
+            bam_file =  temp(f"{output_dir}6_MAPPING_ILLUMINA/BWA_MEM/{{samples}}.bam")
     params:
             rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
             other_options_bwa = config["TOOLS_PARAM"]["BWA_MEM"],
@@ -725,36 +725,6 @@ rule repeatmasker:
         "RepeatMasker -lib {input.lib_file} {params.other_option_RM} {input.fasta_file} -dir {params.directory}"
 
 
-rule genome_stats:
-    threads: get_threads("genome_stats",1)
-    input:
-        mask = rules.repeatmasker.output.fasta_masked,
-        ordered = rules.rename_contigs.output.sorted_fasta,
-        depth_mean = rules.coverage.output.coverage_file
-    output:
-        csv_stat = f"{output_dir}2_GENOME_STATS/STAT_CSV/{{samples}}.csv"
-    log :
-        error =  f'{log_dir}stat_csv/csv_{{samples}}.e',
-        output = f'{log_dir}stat_csv/csv_{{samples}}.o'
-    message:
-        f"""
-             Running {{rule}}
-                Input:
-                    - Fasta masked : {{input.mask}}
-                    - Fasta ordered : {{input.ordered}}
-                    - Coverage : {{input.depth_mean}}
-                Output:
-                    - CSV file : {{output.csv_stat}}
-                Others
-                    - Threads : {{threads}}
-                    - LOG error: {{log.error}}
-                    - LOG output: {{log.output}}
-
-            """
-    shell:
-        f"python {script_dir}summary_contigs.py {{input.mask}} {{input.ordered}} {{input.depth_mean}} {{output.csv_stat}}"
-
-
 rule remove_contigs:
     threads: get_threads("remove_contigs",1)
     input:
@@ -850,7 +820,7 @@ rule assemblytics:
     shell:
         """
         Assemblytics {input.delta} {params.prefix} {params.option_assemblytics}
-        mv {params.prefix}* {params.directory_as}
+        mv -f {params.prefix}* {params.directory_as}
         """
 
 rule tapestry:
@@ -859,7 +829,8 @@ rule tapestry:
         unpack(get_fastq_file_long_read),
         assemblies = rules.rename_contigs.output.sorted_fasta
     output:
-        tapestry_report = f"{output_dir}2_GENOME_STATS/TAPESTRY/{{samples}}/{{samples}}_tapestry_report.html"
+        tapestry_report = f"{output_dir}2_GENOME_STATS/TAPESTRY/{{samples}}/{{samples}}_tapestry_report.html",
+        tapestry_csv = f"{output_dir}2_GENOME_STATS/TAPESTRY/{{samples}}/contig_details.tsv"
     params:
         tapestry_dir = f"{output_dir}2_GENOME_STATS/TAPESTRY/{{samples}}/",
         other_option_tapestry = config["TOOLS_PARAM"]["TAPESTRY"]
@@ -888,6 +859,37 @@ rule tapestry:
         weave -a {input.assemblies} -r {input.reads} -c {threads} -o {params.tapestry_dir} {params.other_option_tapestry}
         mv {params.tapestry_dir}.tapestry_report.html {params.tapestry_dir}{wildcards.samples}_tapestry_report.html
         """
+
+rule genome_stats:
+    threads: get_threads("genome_stats",1)
+    input:
+        mask = rules.repeatmasker.output.fasta_masked,
+        ordered = rules.rename_contigs.output.sorted_fasta,
+        depth_mean = rules.coverage.output.coverage_file,
+        telomere = rules.tapestry.output.tapestry_csv
+    output:
+        csv_stat = f"{output_dir}2_GENOME_STATS/STAT_CSV/{{samples}}.csv"
+    log :
+        error =  f'{log_dir}stat_csv/csv_{{samples}}.e',
+        output = f'{log_dir}stat_csv/csv_{{samples}}.o'
+    message:
+        f"""
+             Running {{rule}}
+                Input:
+                    - Fasta masked : {{input.mask}}
+                    - Fasta ordered : {{input.ordered}}
+                    - Coverage : {{input.depth_mean}}
+                Output:
+                    - CSV file : {{output.csv_stat}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+
+            """
+    shell:
+        f"python {script_dir}summary_contigs.py {{input.mask}} {{input.ordered}} {{input.depth_mean}} {{input.telomere}} {{output.csv_stat}}"
+
 
 rule report_stats_contig:
     threads: get_threads('report_stats_contig', 1)

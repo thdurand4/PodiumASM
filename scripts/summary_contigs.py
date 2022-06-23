@@ -13,7 +13,8 @@ n_percent = []
 GC_contig = defaultdict(str)
 GC = []
 depth = []
-
+start_telo = []
+end_telo = []
 
 for record in SeqIO.parse(sys.argv[1], "fasta"):
     idtocontig[record.id] = record.seq
@@ -42,12 +43,21 @@ with open(sys.argv[3],"r") as f1:
 depth.pop(0)
 
 
-df = pd.DataFrame({"Chromosome":contigs, "Taille_en_bp": taille, "Pourcentage_de_N": n_percent,"GC":GC, "Meand_Depth":depth})
+with open(sys.argv[4],"r") as f1:
+    for lignes in f1:
+        test = lignes.split("\t")
+        start_telo.append(test[4])
+        end_telo.append(test[5])
+
+start_telo.pop(0)
+end_telo.pop(0)
+
+df = pd.DataFrame({"Chromosome":contigs, "Taille_en_bp": taille, "Pourcentage_de_N": n_percent,"GC":GC, "Meand_Depth":depth, "Start_Telomere": start_telo, "End_Telomere": end_telo})
 
 fasta = sys.argv[1]
 strain = fasta.split(".")
 
-df.to_csv(sys.argv[4],index=False)
+df.to_csv(sys.argv[5],index=False)
 
 #print(df)
 
