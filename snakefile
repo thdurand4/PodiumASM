@@ -733,7 +733,8 @@ rule remove_contigs:
     output:
         final_files = f"{output_dir}5_FINAL_FASTA/{{samples}}.fasta"
     params:
-        threshold = config["TOOLS_PARAM"]["REMOVE_CONTIGS_TRESHOLD"]
+        threshold = config["TOOLS_PARAM"]["REMOVE_CONTIGS_TRESHOLD"],
+        size_lim = config["TOOLS_PARAM"]["REMOVE_CONTIGS_SIZE_LIM"]
     log :
         error =  f'{log_dir}remove_contigs/remove_contigs_{{samples}}.e',
         output = f'{log_dir}remove_contigs/remove_contigs_{{samples}}.o'
@@ -752,7 +753,7 @@ rule remove_contigs:
 
             """
     shell:
-        f"python {script_dir}function_remove.py -m {{input.fasta_file_masked}} -f {{input.fasta}} -o {{output.final_files}} -n {{params.threshold}}"
+        f"python {script_dir}function_remove.py -m {{input.fasta_file_masked}} -f {{input.fasta}} -o {{output.final_files}} -n {{params.threshold}} -s {{params.size_lim}}"
 
 rule mummer:
     """run mummer"""

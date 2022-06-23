@@ -17,13 +17,16 @@ from Bio import SeqIO
               required=True, show_default=True, help='Path to create tree file')
 @click.option('--max_n', '-n', type=click.FloatRange(min=0, max=1, min_open=False, max_open=False, clamp=False),
               default=0.7, show_default=True, required=False, help='remove contigs with N > value')
-def main(fasta_masked, fasta_no_masked, fasta_output, max_n):
+@click.option('--min_size', '-s', type=click.INT,
+              default=10000, show_default=True, required=False, help='remove contigs with size < value')
+def main(fasta_masked, fasta_no_masked, fasta_output, max_n, min_size):
     """This programme remove contig with %masked more than value `max_n`"""
     dico_record_masked = SeqIO.to_dict(SeqIO.parse(fasta_masked, "fasta"))
     dico_record = SeqIO.to_dict(SeqIO.parse(fasta_no_masked, "fasta"))
     nb_remove = 0
     nb_keep = 0
     list_keep = []
+    new_list_keep = []
     for id_masked in dico_record_masked:
         seq_record_masked = dico_record_masked[id_masked]
         try:
@@ -37,7 +40,10 @@ def main(fasta_masked, fasta_no_masked, fasta_output, max_n):
             nb_keep += 1
         else:
             nb_remove += 1
-    SeqIO.write(list_keep, fasta_output, 'fasta')
+    for sequence in list_keep:
+        if len(sequence.seq) >= min_size:
+            new_list_keep.append(sequence)
+    SeqIO.write(new_list_keep, fasta_output, 'fasta')
 
     #print(f"Remove: {nb_remove}\nKeep: {nb_keep}\nTotal: {nb_remove + nb_keep}\n")
 
