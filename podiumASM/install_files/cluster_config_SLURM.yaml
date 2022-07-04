@@ -1,0 +1,104 @@
+__default__:
+    cpus-per-task : 4
+    mem-per-cpu : 10G
+    partition : long
+    output: '{log.output}_cluster'
+    error: '{log.error}_cluster'
+    job-name : '{rule}.{wildcards}'
+
+
+quast_full_contigs:
+    cpus-per-task: 6
+    mem-per-cpu: 4G
+    partition: long
+
+busco:
+    cpus-per-task: 8
+    mem-per-cpu: 4G
+    partition: long
+
+busco_figure:
+    cpus-per-task: 1
+    mem-per-cpu: 4G
+    partition: long
+
+rename_contigs:
+    cpus-per-task: 1
+    partition: fast
+
+bwa_index:
+    cpus-per-task: 1
+
+bwa_mem_sort_bam:
+    cpus-per-task: 6
+    mem-per-cpu: 4G
+    partition: long
+
+samtools_index_illumina:
+    cpus-per-task: 1
+
+samtools_idxstats:
+    cpus-per-task: 4
+    mem-per-cpu: 4G
+
+merge_idxstats:
+    cpus-per-task: 1
+    mem-per-cpu: 30G
+
+samtools_depth:
+    mem-per-cpu: 4G
+
+bam_stats_to_csv:
+    mem-per-cpu: 20G
+
+merge_bam_stats:
+    cpus-per-task: 1
+
+report_stats_contig:
+    cpus-per-task: 1
+
+minimap2:
+    cpus-per-task: 5
+    mem-per-cpu: 5G
+    partition: long
+
+samtools_index:
+    cpus-per-task: 3
+
+sniffles:
+    cpus-per-task: 6
+    mem-per-cpu: 5G
+    partition: long
+
+repeatmasker:
+    cpus-per-task: 5
+    mem-per-cpu: 4G
+
+remove-contigs:
+    cpus-per-task: 1
+
+genome_stats:
+    cpus-per-task: 1
+
+coverage:
+    cpus-per-task: 4
+    mem-per-cpu: 2G
+
+align_assembly:
+    cpus-per-task: 5
+    mem-per-cpu: 5G
+
+mummer:
+    cpus-per-task: 3
+    mem-per-cpu: 2G
+
+assemblytics:
+    cpus-per-task: 1
+
+tapestry:
+    cpus-per-task: 8
+    mem-per-cpu: 8G
+
+repeatmodeler:
+    cpus-per-task: 12
+    mem-per-cpu: 3G
