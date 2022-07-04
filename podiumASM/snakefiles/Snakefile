@@ -832,7 +832,7 @@ rule mummer:
         error=f'{log_dir}mummer/mummer_{{samples}}.e',
         output=f'{log_dir}mummer/mummer_{{samples}}.o'
     envmodules:
-        tools_config["MODULES"]["MUMMER"],
+        tools_config["MODULES"]["MUMMER4"],
     shell:
         """
         nucmer --delta {output.delta} {params.option_nucmer} {input.reference_file} {input.final_files} 1>{log.output} 2>{log.error}
@@ -877,7 +877,8 @@ rule tapestry:
         unpack(get_fastq_file_long_read),
         assemblies=rules.rename_contigs.output.sorted_fasta
     output:
-        tapestry_report=f"{output_dir}2_GENOME_STATS/TAPESTRY/{{samples}}/{{samples}}_tapestry_report.html"
+        tapestry_report=f"{output_dir}2_GENOME_STATS/TAPESTRY/{{samples}}/{{samples}}_tapestry_report.html",
+        tapestry_csv = f"{output_dir}2_GENOME_STATS/TAPESTRY/{{samples}}/contig_details.tsv"
     params:
         tapestry_dir=f"{output_dir}2_GENOME_STATS/TAPESTRY/{{samples}}/",
         other_option_tapestry=config["TOOLS_PARAM"]["TAPESTRY"]
