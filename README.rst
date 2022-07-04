@@ -9,7 +9,7 @@
     :depth: 2
 
 About podiumASM
-==================
+===============
 
 **Homepage:** `https://podiumASM.readthedocs.io/en/latest/ <https://podiumASM.readthedocs.io/en/latest/>`_
 

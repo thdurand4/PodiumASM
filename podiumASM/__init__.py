@@ -5,7 +5,7 @@ from .global_variables import *
 from .scripts.function_snakemake import *
 from .snakemake_module import Podium
 
-logo = INSTALL_PATH.joinpath('RattleSNP_logo.png').as_posix()
+logo = INSTALL_PATH.joinpath('PodiumASM_logo.png').as_posix()
 
 __version__ = get_version()
 

@@ -4,7 +4,7 @@ from .global_variable import *
 from .usefull_function import package_name
 import os
 import re
-
+import subprocess
 
 def rewrite_if_bind(snakemake_other):
     """
@@ -19,6 +19,24 @@ def rewrite_if_bind(snakemake_other):
         return snakemake_other_list
     else:
         return snakemake_other
+
+
+def build_pdf(cmd_snakemake_base):
+    dag_cmd_snakemake = f"{cmd_snakemake_base} --dag | dot -Tpdf > schema_pipeline_dag.pdf"
+    click.secho(f"    {dag_cmd_snakemake}\n", fg='bright_blue')
+    process = subprocess.run(dag_cmd_snakemake, shell=True, check=False, stdout=sys.stdout, stderr=sys.stderr)
+    if int(process.returncode) >= 1:
+        sys.exit(1)
+    rulegraph_cmd_snakemake = f"{cmd_snakemake_base} --rulegraph | dot -Tpdf > schema_pipeline_global.pdf"
+    click.secho(f"    {rulegraph_cmd_snakemake}\n", fg='bright_blue')
+    process = subprocess.run(rulegraph_cmd_snakemake, shell=True, check=False, stdout=sys.stdout, stderr=sys.stderr)
+    if int(process.returncode) >= 1:
+        sys.exit(1)
+    filegraph_cmd_snakemake = f"{cmd_snakemake_base} --filegraph | dot -Tpdf > schema_pipeline_files.pdf"
+    click.secho(f"    {filegraph_cmd_snakemake}\n", fg='bright_blue')
+    process = subprocess.run(filegraph_cmd_snakemake, shell=True, check=False, stdout=sys.stdout, stderr=sys.stderr)
+    if int(process.returncode) >= 1:
+        sys.exit(1)
 
 
 @click.command("run_cluster", short_help='Run workflow on HPC', context_settings=dict(ignore_unknown_options=True, max_content_width=800), no_args_is_help=True)
@@ -61,19 +79,12 @@ def run_cluster(config, pdf, snakemake_other):
 
     cmd_snakemake_base = f"snakemake --show-failed-logs -p -s {SNAKEFILE} --configfile {config} --profile {profile} {cmd_clusterconfig} {' '.join(rewrite_if_bind(snakemake_other))}"
     click.secho(f"\n    {cmd_snakemake_base}\n", fg='bright_blue')
-    # exit()
-    os.system(cmd_snakemake_base)
+    process = subprocess.run(cmd_snakemake_base, shell=True, check=False, stdout=subprocess.PIPE)
+    if int(process.returncode) >= 1:
+        sys.exit(1)
 
     if pdf:
-        dag_cmd_snakemake = f"{cmd_snakemake_base} --dag | dot -Tpdf > schema_pipeline_dag.pdf"
-        click.secho(f"    {dag_cmd_snakemake}\n", fg='bright_blue')
-        os.system(dag_cmd_snakemake)
-        rulegraph_cmd_snakemake = f"{cmd_snakemake_base} --rulegraph | dot -Tpdf > schema_pipeline_global.pdf"
-        click.secho(f"    {rulegraph_cmd_snakemake}\n", fg='bright_blue')
-        os.system(rulegraph_cmd_snakemake)
-        filegraph_cmd_snakemake = f"{cmd_snakemake_base} --filegraph | dot -Tpdf > schema_pipeline_files.pdf"
-        click.secho(f"    {filegraph_cmd_snakemake}\n", fg='bright_blue')
-        os.system(filegraph_cmd_snakemake)
+        build_pdf(cmd_snakemake_base)
 
 
 @click.command("run_local", short_help='Run a workflow on local computer (use singularity mandatory)', context_settings=dict(ignore_unknown_options=True, max_content_width=800),
@@ -91,7 +102,7 @@ def run_local(config, threads, pdf, snakemake_other):
     These parameters will take precedence over Snakemake ones, which were
     defined in the profile.
     See: https://snakemake.readthedocs.io/en/stable/executing/cli.html
-    
+
     Example:
 
         podiumASM run_local -c config.yaml --threads 8 --dry-run
@@ -107,14 +118,9 @@ def run_local(config, threads, pdf, snakemake_other):
 
     cmd_snakemake_base = f"snakemake --latency-wait 1296000 --cores {threads} --use-singularity --show-failed-logs --printshellcmds -s {SNAKEFILE} --configfile {config}  {' '.join(rewrite_if_bind(snakemake_other))}"
     click.secho(f"\n    {cmd_snakemake_base}\n", fg='bright_blue')
-    os.system(cmd_snakemake_base)
+    process = subprocess.run(cmd_snakemake_base, shell=True, check=False, stdout=sys.stdout, stderr=sys.stderr)
+    if int(process.returncode) >= 1:
+        sys.exit(1)
+
     if pdf:
-        dag_cmd_snakemake = f"{cmd_snakemake_base} --dag | dot -Tpdf > schema_pipeline_dag.pdf"
-        click.secho(f"    {dag_cmd_snakemake}\n", fg='bright_blue')
-        os.system(dag_cmd_snakemake)
-        rulegraph_cmd_snakemake = f"{cmd_snakemake_base} --rulegraph | dot -Tpdf > schema_pipeline_global.pdf"
-        click.secho(f"    {rulegraph_cmd_snakemake}\n", fg='bright_blue')
-        os.system(rulegraph_cmd_snakemake)
-        filegraph_cmd_snakemake = f"{cmd_snakemake_base} --filegraph | dot -Tpdf > schema_pipeline_files.pdf"
-        click.secho(f"    {filegraph_cmd_snakemake}\n", fg='bright_blue')
-        os.system(filegraph_cmd_snakemake)
+        build_pdf(cmd_snakemake_base)
