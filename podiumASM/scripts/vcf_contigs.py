@@ -1,75 +1,55 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# @author Sebastien Ravel
+
 import pandas as pd
 import click
-import re
-import allel
+from allel import vcf_to_dataframe
 from Bio import SeqIO
+from collections import defaultdict, OrderedDict
+from pprint import pprint as pp
+
 
 @click.command(context_settings={'help_option_names': ('-h', '--help'), "max_content_width": 800})
-@click.option('--vcf', '-v', default=None,
+@click.option('--vcf', '-v',
               type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True, resolve_path=True),
-              required=True, show_default=True, help='Path to input gff file')
-@click.option('--output', '-o', default=None,
+              required=True, show_default=False, help='Path to input gff file')
+@click.option('--output', '-o',
               type=click.Path(exists=False, file_okay=True, dir_okay=False, readable=True, resolve_path=True),
-              required=True, show_default=True, help='Path to output file')
-@click.option('--ref_fasta', '-r', default=None,
+              required=True, show_default=False, help='Path to output file')
+@click.option('--ref_fasta', '-r',
               type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True, resolve_path=True),
-              required=True, show_default=True, help='Path to input reference genome fasta file')
-
-
+              required=True, show_default=False, help='Path to input reference genome fasta file')
 def main(vcf, output, ref_fasta):
+    df = vcf_to_dataframe(vcf)
+    print(df)
 
-    df = allel.vcf_to_dataframe(vcf)
-    list_contigs = []
-    list_del = []
-    list_ins = []
-    list_inv = []
-    list_trans = []
-    list_dup = []
+    dico_stats = defaultdict(OrderedDict)
 
-    for record in SeqIO.parse(ref_fasta, "fasta"):
-        list_contigs.append(str(record.id))
+    ID_list = list((df.ID))
+    chrm_list = list((df.CHROM))
 
-    ID = list((df.ID))
-    chrm = list((df.CHROM))
+    dict_to_name = {"DEL": "deletion",
+                    "INS":"insertion",
+                    "INV":"inversion",
+                    "BND":"translocations",
+                    "DUP":"duplications"
+                    }
 
-    for element in list_contigs:
+    for chr, type_variant in zip(chrm_list, ID_list):
+        variant = type_variant.split(".")[1]
+        if dict_to_name[variant] not in dico_stats[chr]:
+            dico_stats[chr][dict_to_name[variant]] = 0
+        else:
+            dico_stats[chr][dict_to_name[variant]] += 1
+    dataframe_stats = pd.DataFrame.from_dict(dico_stats, orient='index')
+    dataframe_stats.reset_index(level=0, inplace=True)
+    dataframe_stats.rename({"index": 'Contigs'}, axis='columns', inplace=True, errors="raise")
+    # print(dataframe_stats)
+    with open(output, "w") as out_csv_file:
+        dataframe_stats.to_csv(out_csv_file, index=False)
 
-        deletions = 0
-        insertion = 0
-        inversion = 0
-        translocations = 0
-        duplications = 0
 
-        for k in range(len(chrm)):
-            if chrm[k] == element:
-                variant = ID[k].split(".")
-                if variant[1] == 'DEL':
-                    deletions += 1
-                if variant[1] == 'INS':
-                    insertion += 1
-                if variant[1] == 'INV':
-                    inversion += 1
-                if variant[1] == 'BND':
-                    translocations += 1
-                if variant[1] == 'DUP':
-                    duplications += 1
-        list_del.append(deletions)
-        list_ins.append(insertion)
-        list_dup.append(duplications)
-        list_trans.append(translocations)
-        list_inv.append(inversion)
-
-    resume = pd.DataFrame()
-    resume["contigs"] = list_contigs
-    resume["deletions"] = list_del
-    resume["insertions"] = list_ins
-    resume["inversions"] = list_inv
-    resume["translocations"] = list_trans
-    resume["duplications"] = list_dup
-
-    print(resume)
-
-    resume.to_csv(output)
 
 if __name__ == '__main__':
     main()

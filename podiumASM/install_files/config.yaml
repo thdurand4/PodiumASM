@@ -5,7 +5,7 @@ DATA:
     LONG_READS: "/shared/home/tdurand/annotation_fijiensism2/fastq_guppy6/"
     REPEAT_DB: "/shared/home/tdurand/annotation_fijiensism2/final_workflow/P_Fijiensis-families.fa"
     SHORT_READS : "/shared/home/tdurand/annotation_fijiensism2/illumina/"
-    SCRIPTS : /shared/home/tdurand/annotation_fijiensism2/FIJIENSIS_ASSEMBLY_FINDER/scripts/
+    SCRIPTS : "/shared/home/tdurand/annotation_fijiensism2/FIJIENSIS_ASSEMBLY_FINDER/scripts/"
 
 TOOLS_PARAM:
     BUSCO_DATABASE: "capnodiales_odb10"

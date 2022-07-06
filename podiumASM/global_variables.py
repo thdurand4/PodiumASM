@@ -1,7 +1,7 @@
 from pathlib import Path
 
-DOCS = "https://rattlesnp.readthedocs.io/en/latest/"
-GIT_URL = "https://github.com/thdurand4/podium"
+DOCS = "`https://podiumASM.readthedocs.io/en/latest/"
+GIT_URL = "https://github.com/thdurand4/podiumASM"
 
 INSTALL_PATH = Path(__file__).resolve().parent
 SINGULARITY_URL_FILES = [('http://nas-bgpi.myds.me/DOC/rattleSNP/Singularity.rattleSNP_tools.sif',

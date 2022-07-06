@@ -67,7 +67,6 @@ def main():
             'PyYAML',
             'pandas',
             'matplotlib',
-            'rpy2',
             'biopython',
             'numpy',
             'snakemake',
@@ -75,7 +74,8 @@ def main():
             'click>=8.0.3',
             'cookiecutter',
             'docutils < 0.18',
-            'scikit-allel'
+            'scikit-allel',
+            "sniffles>=2.0.6"
         ],
         extras_require={
             'dev': ['sphinx_copybutton',
@@ -85,7 +85,9 @@ def main():
         },
         entry_points={
             NAME: [f"{NAME} = __init__"],
-            'console_scripts': [f"{NAME} = {NAME}.main:main"]},
+            'console_scripts': [f"{NAME} = {NAME}.main:main",
+                                f"rename_by_length = {NAME}.scripts.rename_by_length:main",
+                                f"filter_TE_contig = {NAME}.scripts.filter_TE_contig:main"]},
 
         # Pypi information
         platforms=['unix', 'linux'],

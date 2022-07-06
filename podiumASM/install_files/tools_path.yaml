@@ -4,17 +4,17 @@
 ## WARNING!!! DO NOT ERASE LINES OR COMMENT THEM !  è_é
 
 SINGULARITY:
-    REPORT : '{INSTALL_PATH}/containers/Singularity.report.sif'
-    TOOLS : '{INSTALL_PATH}/containers/Singularity.rattleSNP_tools.sif'
+    REPORT: '{INSTALL_PATH}/containers/Singularity.report.sif'
+    TOOLS: '{INSTALL_PATH}/containers/Singularity.rattleSNP_tools.sif'
 
 MODULES:
     "BUSCO": "busco/5.1.2"
     "PYTHON3": "python/3.7"                    # Python3 >=3.6 with require libraries
     "BWA": "bwa/0.7.17"                         # for make the mapping
-    "SAMTOOLS": "samtools/1.9"
+    "SAMTOOLS": "samtools/1.15.1"
     "QUAST": "quast/5.0.2"
     "MINIMAP2": "minimap2"
-    "SNIFFLES": "sniffles"
+    "SNIFFLES": "python/3.7"
     "REPEATMASKER": "repeatmasker/4.1.2.p1"
     "MUMMER4": "mummer4/4.0.0rc1"
     "ASSEMBLYTICS": "assemblytics/1.2.1" # for filter vcf

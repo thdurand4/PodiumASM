@@ -6,7 +6,8 @@ from pprint import pprint as pp
 # load own functions
 import podiumASM
 from podiumASM.snakemake_module import Podium
-from podiumASM import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
+from podiumASM import parse_idxstats, check_mapping_stats, merge_samtools_depth_csv
+from podiumASM.snakeWrapper import *
 
 # pp(workflow.basedir)
 podium_obj = Podium(workflow, config)
@@ -99,7 +100,7 @@ def get_fastq_file_long_read(wildcards):
 # --- Main Build Rules --- #
 rule finale:
     input:
-        report_stat_final=f"{output_dir}2_GENOME_STATS/report.html"
+        report_stat_final=f"{output_dir}/report.html"
 
 rule rename_contigs:
     threads: get_threads("rename_contigs",1)
@@ -125,7 +126,7 @@ rule rename_contigs:
             - LOG output: {{log.output}}
         """
     shell:
-        f"(python {script_dir}function_rename.py -i {{input.assembly}} -o {{output.sorted_fasta}}) 1>{{log.output}} 2>{{log.error}}"
+        f"(rename_by_length -i {{input.assembly}} -o {{output.sorted_fasta}}) 1>{{log.output}} 2>{{log.error}}"
 
 rule busco:
     """make quast report for our strain assembly"""
@@ -384,43 +385,46 @@ rule samtools_depth:
         (samtools depth -@ {threads} {params.other_options} {input.bam} | tee {output.txt_file}) 1>{log.output} 2>{log.error}
         """
 
-rule bam_stats_to_csv:
+
+rule samtools_depth_to_csv:
     """build csv with mean depth, median depth and mean coverage for all bam"""
-    threads: get_threads('bam_stats_to_csv',1)
-    input:
-        bam=rules.samtools_index_illumina.input.bam,
-        bai=rules.samtools_index_illumina.output.bai,
-        txt=rules.samtools_depth.output.txt_file
-    output:
-        csv_resume=f'{output_dir}6_MAPPING_ILLUMINA/STATS/depth/{{samples}}.csv'
+    threads : get_threads('samtools_depth_to_csv', 1)
+    input :
+        bam = rules.samtools_index_illumina.input.bam,
+        bai = rules.samtools_index_illumina.output.bai,
+        txt = rules.samtools_depth.output.txt_file,
+        ref = f"{fasta_dir}{{samples}}.fasta"
+    output :
+        csv_resume = f'{output_dir}6_MAPPING_ILLUMINA/STATS/depth/{{samples}}.csv'
     log:
-        error=f'{log_dir}bam_stats_to_csv/{{samples}}.e',
-        output=f'{log_dir}bam_stats_to_csv/{{samples}}.o'
+        error =  f'{log_dir}samtools_depth_to_csv/{{samples}}.e',
+        output = f'{log_dir}samtools_depth_to_csv/{{samples}}.o'
     message:
         f"""
         Running {{rule}}
         Input:
-            - Bam: {{input.bam}}
+            - reference : {{input.ref}}
+            - txt : {{input.txt}}
         Output:
-            - CSV: {{output.csv_resume}}
+            - CSV : temp({{output.csv_resume}})
         Others
-            - Threads: {{threads}}
+            - Threads : {{threads}}
             - LOG error: {{log.error}}
             - LOG output: {{log.output}}
         """
-    run:
-        check_mapping_stats(input.bam,output.csv_resume,sep="\t")
+    run :
+        check_mapping_stats(input.ref, input.txt, output.csv_resume, sep="\t")
 
-rule merge_bam_stats:
+rule merge_samtools_depth_stats:
     """merge all bam_stats_to_csv files"""
-    threads: get_threads('merge_bam_stats',1)
+    threads: get_threads('merge_samtools_depth_stats',1)
     input:
-        csv_resume=expand(rules.bam_stats_to_csv.output.csv_resume,samples=ASSEMBLIES)
+        csv_resume=expand(rules.samtools_depth_to_csv.output.csv_resume,samples=ASSEMBLIES)
     output:
         csv_resume_merge=report(f"{output_dir}6_MAPPING_ILLUMINA/STATS/all_mapping_stats_Depth_resume.csv",category="Resume mapping info's")
     log:
-        error=f'{log_dir}merge_bam_stats/mergeResume.e',
-        output=f'{log_dir}merge_bam_stats/mergeResume.o'
+        error=f'{log_dir}merge_samtools_depth_stats/mergeResume.e',
+        output=f'{log_dir}merge_samtools_depth_stats/mergeResume.o'
     message:
         f"""
         Running {{rule}}
@@ -434,7 +438,7 @@ rule merge_bam_stats:
             - LOG output: {{log.output}}
         """
     run:
-        merge_bam_stats_csv(input.csv_resume,output.csv_resume_merge,sep="\t")
+        merge_samtools_depth_csv(input.csv_resume,output.csv_resume_merge,sep="\t")
 
 
 rule quast_full_contigs:
@@ -546,6 +550,8 @@ rule sniffles:
     log:
         error=f'{log_dir}sniffles/sniffles_{{samples}}.e',
         output=f'{log_dir}sniffles/sniffles_{{samples}}.o'
+    envmodules:
+        tools_config["MODULES"]["SNIFFLES"]
     message:
         f"""
         Running {{rule}}
@@ -584,7 +590,7 @@ rule variant_calling:
             - LOG output: {{log.output}}
             """
     envmodules:
-        tools_config["MODULES"]["SNIFFLES"]
+        tools_config["MODULES"]["PYTHON3"]
     shell:
         f"(python {script_dir}vcf_parse.py {{input.vcf_file}} {{output.csv_file}}) 1>{{log.output}} 2>{{log.error}}"
 
@@ -748,35 +754,6 @@ rule repeatmasker:
         "(RepeatMasker -lib {input.lib_file} {params.other_option_RM} {input.fasta_file} -dir {params.directory}) 1>{log.output} 2>{log.error}"
 
 
-rule genome_stats:
-    threads: get_threads("genome_stats",1)
-    input:
-        mask=rules.repeatmasker.output.fasta_masked,
-        ordered=rules.rename_contigs.output.sorted_fasta,
-        depth_mean=rules.coverage.output.coverage_file
-    output:
-        csv_stat=f"{output_dir}2_GENOME_STATS/STAT_CSV/{{samples}}.csv"
-    log:
-        error=f'{log_dir}stat_csv/csv_{{samples}}.e',
-        output=f'{log_dir}stat_csv/csv_{{samples}}.o'
-    message:
-        f"""
-        Running {{rule}}
-        Input:
-            - Fasta masked: {{input.mask}}
-            - Fasta ordered: {{input.ordered}}
-            - Coverage: {{input.depth_mean}}
-        Output:
-            - CSV file: {{output.csv_stat}}
-        Others
-            - Threads: {{threads}}
-            - LOG error: {{log.error}}
-            - LOG output: {{log.output}}
-        """
-    shell:
-        f"(python {script_dir}summary_contigs.py {{input.mask}} {{input.ordered}} {{input.depth_mean}} {{output.csv_stat}}) 1>{{log.output}} 2>{{log.error}}"
-
-
 rule remove_contigs:
     threads: get_threads("remove_contigs",1)
     input:
@@ -803,7 +780,7 @@ rule remove_contigs:
             - LOG output: {{log.output}}
         """
     shell:
-        f"(python {script_dir}function_remove.py -m {{input.fasta_file_masked}} -f {{input.fasta}} -o {{output.final_files}} -n {{params.threshold}}) 1>{{log.output}} 2>{{log.error}}"
+        f"(filter_TE_contig -m {{input.fasta_file_masked}} -f {{input.fasta}} -o {{output.final_files}} -n {{params.threshold}}) 1>{{log.output}} 2>{{log.error}}"
 
 rule mummer:
     """run mummer"""
@@ -908,6 +885,37 @@ rule tapestry:
         mv {params.tapestry_dir}.tapestry_report.html {params.tapestry_dir}{wildcards.samples}_tapestry_report.html) 1>{log.output} 2>{log.error}
         """
 
+rule genome_stats:
+    threads: get_threads("genome_stats",1)
+    input:
+        mask=rules.repeatmasker.output.fasta_masked,
+        depth_mean=rules.coverage.output.coverage_file,
+        telomere= rules.tapestry.output.tapestry_csv
+    output:
+        csv_stat=f"{output_dir}2_GENOME_STATS/STAT_CSV/{{samples}}.csv"
+    log:
+        error=f'{log_dir}stat_csv/csv_{{samples}}.e',
+        output=f'{log_dir}stat_csv/csv_{{samples}}.o'
+    envmodules:
+        tools_config["MODULES"]["PYTHON3"]
+    message:
+        f"""
+        Running {{rule}}
+        Input:
+            - Fasta masked: {{input.mask}}
+            - Coverage: {{input.depth_mean}}
+            - telomere: {{input.telomere}}
+        Output:
+            - CSV file: {{output.csv_stat}}
+        Others
+            - Threads: {{threads}}
+            - LOG error: {{log.error}}
+            - LOG output: {{log.output}}
+        """
+    shell:
+        f"(python3 {SNAKEMAKE_SCRIPTS}/summary_contigs.py -m {{input.mask}} -d {{input.depth_mean}} -t {{input.telomere}} -c {{output.csv_stat}}) 1>{{log.output}} 2>{{log.error}}"
+
+
 rule report_stats_contig:
     threads: get_threads('report_stats_contig',1)
     input:
@@ -916,12 +924,12 @@ rule report_stats_contig:
         csv_structural_variant=expand(rules.variant_calling.output.csv_file,samples=ASSEMBLIES),
         quast=rules.quast_full_contigs.output.quast_results,
         dotplot_final=expand(rules.assemblytics.output.dotplot,samples=ASSEMBLIES),
-        depth_resume=rules.merge_bam_stats.output.csv_resume_merge,
+        depth_resume=rules.merge_samtools_depth_stats.output.csv_resume_merge,
         idxstats_resume=rules.merge_idxstats.output.csv_resume_merge,
         tapestry_out=expand(rules.tapestry.output.tapestry_report,samples=ASSEMBLIES),
         csv_var_per_contig=expand(rules.variant_per_contig.output.csv_var_per_contig,samples=ASSEMBLIES)
     output:
-        report=f"{output_dir}2_GENOME_STATS/report.html"
+        report=f"{output_dir}/report.html"
     params:
         csv_all_dir=f"{output_dir}2_GENOME_STATS/STAT_CSV",
         csv_struct_dir=f"{output_dir}4_STRUCTURAL_VAR/csv_variants",

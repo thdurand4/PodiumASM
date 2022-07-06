@@ -79,7 +79,7 @@ def run_cluster(config, pdf, snakemake_other):
 
     cmd_snakemake_base = f"snakemake --show-failed-logs -p -s {SNAKEFILE} --configfile {config} --profile {profile} {cmd_clusterconfig} {' '.join(rewrite_if_bind(snakemake_other))}"
     click.secho(f"\n    {cmd_snakemake_base}\n", fg='bright_blue')
-    process = subprocess.run(cmd_snakemake_base, shell=True, check=False, stdout=subprocess.PIPE)
+    process = subprocess.run(cmd_snakemake_base, shell=True, check=False, stdout=sys.stdout, stderr=sys.stderr)
     if int(process.returncode) >= 1:
         sys.exit(1)
 
