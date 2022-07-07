@@ -5,8 +5,7 @@ from pathlib import Path
 from pprint import pprint as pp
 # load own functions
 import podiumASM
-from podiumASM.snakemake_module import Podium
-from podiumASM import parse_idxstats, check_mapping_stats, merge_samtools_depth_csv
+from podiumASM import Podium, parse_idxstats, check_mapping_stats, merge_samtools_depth_csv
 from podiumASM.snakeWrapper import *
 
 # pp(workflow.basedir)
@@ -568,31 +567,31 @@ rule sniffles:
     shell:
         "(sniffles -i {input.bam_file} {params.option_sniffles} -v {output.vcf_file} -t {threads}) 1>{log.output} 2>{log.error}"
 
-rule variant_calling:
-    threads: get_threads("variant_calling",1)
-    input:
-        vcf_file=rules.sniffles.output.vcf_file
-    output:
-        csv_file=f"{output_dir}4_STRUCTURAL_VAR/csv_variants/{{samples}}_variants.csv"
-    log:
-        error=f'{log_dir}variants/variants_{{samples}}.e',
-        output=f'{log_dir}variants/variants_{{samples}}.o'
-    message:
-        f"""
-        Running {{rule}}
-        Input:
-            - vcf: {{input.vcf_file}}
-        Output:
-            - csv_file: {{output.csv_file}}
-        Others
-            - Threads: {{threads}}
-            - LOG error: {{log.error}}
-            - LOG output: {{log.output}}
-            """
-    envmodules:
-        tools_config["MODULES"]["PYTHON3"]
-    shell:
-        f"(python {script_dir}vcf_parse.py {{input.vcf_file}} {{output.csv_file}}) 1>{{log.output}} 2>{{log.error}}"
+# rule variant_calling:
+#     threads: get_threads("variant_calling",1)
+#     input:
+#         vcf_file=rules.sniffles.output.vcf_file
+#     output:
+#         csv_file=f"{output_dir}4_STRUCTURAL_VAR/csv_variants/{{samples}}_variants.csv"
+#     log:
+#         error=f'{log_dir}variants/variants_{{samples}}.e',
+#         output=f'{log_dir}variants/variants_{{samples}}.o'
+#     message:
+#         f"""
+#         Running {{rule}}
+#         Input:
+#             - vcf: {{input.vcf_file}}
+#         Output:
+#             - csv_file: {{output.csv_file}}
+#         Others
+#             - Threads: {{threads}}
+#             - LOG error: {{log.error}}
+#             - LOG output: {{log.output}}
+#             """
+#     envmodules:
+#         tools_config["MODULES"]["PYTHON3"]
+#     shell:
+#         f"(python {SNAKEMAKE_SCRIPTS}vcf_parse.py {{input.vcf_file}} {{output.csv_file}}) 1>{{log.output}} 2>{{log.error}}"
 
 rule variant_per_contig:
     threads: get_threads("variant_per_contig",1)
@@ -616,7 +615,7 @@ rule variant_per_contig:
             - LOG error: {{log.error}}
             - LOG output: {{log.output}}
         """
-    shell: f"(python {script_dir}vcf_contigs.py -v {{input.vcf_file}} -r {{input.ref_fasta}} -o {{output.csv_var_per_contig}}) 1>{{log.output}} 2>{{log.error}}"
+    shell: f"(python {SNAKEMAKE_SCRIPTS}vcf_contigs.py -v {{input.vcf_file}} -r {{input.ref_fasta}} -o {{output.csv_var_per_contig}}) 1>{{log.output}} 2>{{log.error}}"
 
 rule align_assembly:
     threads: get_threads("align_assembly",5)
@@ -922,7 +921,7 @@ rule report_stats_contig:
     input:
         csv_stat_contig=expand(rules.genome_stats.output.csv_stat,samples=ASSEMBLIES),
         figure_busco=rules.busco_figure.output.figure,
-        csv_structural_variant=expand(rules.variant_calling.output.csv_file,samples=ASSEMBLIES),
+        # csv_structural_variant=expand(rules.variant_calling.output.csv_file,samples=ASSEMBLIES),
         quast=rules.quast_full_contigs.output.quast_results,
         dotplot_final=expand(rules.assemblytics.output.dotplot,samples=ASSEMBLIES),
         depth_resume=rules.merge_samtools_depth_stats.output.csv_resume_merge,
@@ -954,4 +953,4 @@ rule report_stats_contig:
             - LOG output: {{log.output}}
         """
     script:
-        f"""{script_dir}report_stats_genome.Rmd"""
+        f"""{SNAKEMAKE_SCRIPTS}report_stats_genome.Rmd"""

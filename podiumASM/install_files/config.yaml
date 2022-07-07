@@ -1,11 +1,11 @@
 DATA:
-    REFERENCE: "/shared/home/tdurand/annotation_fijiensism2/ref/Mycfi2_wg_ed.fasta"
-    ASSEMBLY: "/shared/home/tdurand/annotation_fijiensism2/CulebrONT_assembly_SUP/"
-    OUTPUT: "/shared/home/tdurand/annotation_fijiensism2/FIJIENSIS_ASSEMBLY_FINDER/RESULTS/"
-    LONG_READS: "/shared/home/tdurand/annotation_fijiensism2/fastq_guppy6/"
-    REPEAT_DB: "/shared/home/tdurand/annotation_fijiensism2/final_workflow/P_Fijiensis-families.fa"
-    SHORT_READS : "/shared/home/tdurand/annotation_fijiensism2/illumina/"
-    SCRIPTS : "/shared/home/tdurand/annotation_fijiensism2/FIJIENSIS_ASSEMBLY_FINDER/scripts/"
+    REFERENCE: "./ref/Mycfi2_wg_ed.fasta"
+    ASSEMBLY: "./CulebrONT_assembly_SUP/"
+    OUTPUT: "./FIJIENSIS_ASSEMBLY_FINDER/RESULTS/"
+    LONG_READS: "./fastq_guppy6/"
+    REPEAT_DB: "./P_Fijiensis-families.fa"
+    SHORT_READS : "./illumina/"
+    SCRIPTS : "./scripts/"
 
 TOOLS_PARAM:
     BUSCO_DATABASE: "capnodiales_odb10"

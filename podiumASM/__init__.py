@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 from .snakeWrapper import *
 from .global_variables import *
-from .scripts.function_snakemake import *
-from .snakemake_module import Podium
+from .snakemake_module import Podium, parse_idxstats, check_mapping_stats, merge_samtools_depth_csv
 
 logo = INSTALL_PATH.joinpath('PodiumASM_logo.png').as_posix()
 

@@ -1,11 +1,13 @@
 __default__:
-    cpus-per-task : 4
+    cpus-per-task : 2
     mem-per-cpu : 10G
     partition : long
     output: '{log.output}_cluster'
     error: '{log.error}_cluster'
     job-name : '{rule}.{wildcards}'
 
+variant_per_contig:
+    partition: fast
 
 quast_full_contigs:
     cpus-per-task: 6
@@ -20,7 +22,7 @@ busco:
 busco_figure:
     cpus-per-task: 1
     mem-per-cpu: 4G
-    partition: long
+    partition: fast
 
 rename_contigs:
     cpus-per-task: 1
@@ -28,6 +30,7 @@ rename_contigs:
 
 bwa_index:
     cpus-per-task: 1
+    partition: fast
 
 bwa_mem_sort_bam:
     cpus-per-task: 6
@@ -36,26 +39,33 @@ bwa_mem_sort_bam:
 
 samtools_index_illumina:
     cpus-per-task: 1
+    partition: fast
 
 samtools_idxstats:
     cpus-per-task: 4
     mem-per-cpu: 4G
+    partition: fast
 
 merge_idxstats:
     cpus-per-task: 1
     mem-per-cpu: 30G
+    partition: fast
 
 samtools_depth:
     mem-per-cpu: 4G
+    partition: fast
 
-bam_stats_to_csv:
+samtools_depth_to_csv:
     mem-per-cpu: 20G
+    partition: fast
 
-merge_bam_stats:
+merge_samtools_depth_stats:
     cpus-per-task: 1
+    partition: fast
 
 report_stats_contig:
     cpus-per-task: 1
+    partition: fast
 
 minimap2:
     cpus-per-task: 5
@@ -64,6 +74,7 @@ minimap2:
 
 samtools_index:
     cpus-per-task: 3
+    partition: fast
 
 sniffles:
     cpus-per-task: 6
@@ -74,11 +85,13 @@ repeatmasker:
     cpus-per-task: 5
     mem-per-cpu: 4G
 
-remove-contigs:
+remove_contigs:
     cpus-per-task: 1
+    partition: fast
 
 genome_stats:
     cpus-per-task: 1
+    partition: fast
 
 coverage:
     cpus-per-task: 4

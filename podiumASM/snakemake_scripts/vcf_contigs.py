@@ -22,33 +22,35 @@ from pprint import pprint as pp
               required=True, show_default=False, help='Path to input reference genome fasta file')
 def main(vcf, output, ref_fasta):
     df = vcf_to_dataframe(vcf)
-    print(df)
-
     dico_stats = defaultdict(OrderedDict)
 
     ID_list = list((df.ID))
     chrm_list = list((df.CHROM))
 
     dict_to_name = {"DEL": "deletion",
-                    "INS":"insertion",
-                    "INV":"inversion",
-                    "BND":"translocations",
-                    "DUP":"duplications"
+                    "INS": "insertion",
+                    "INV": "inversion",
+                    "BND": "translocations",
+                    "DUP": "duplications"
                     }
 
     for chr, type_variant in zip(chrm_list, ID_list):
         variant = type_variant.split(".")[1]
         if dict_to_name[variant] not in dico_stats[chr]:
-            dico_stats[chr][dict_to_name[variant]] = 0
+            dico_stats[chr][dict_to_name[variant]] = 1
         else:
             dico_stats[chr][dict_to_name[variant]] += 1
     dataframe_stats = pd.DataFrame.from_dict(dico_stats, orient='index')
     dataframe_stats.reset_index(level=0, inplace=True)
     dataframe_stats.rename({"index": 'Contigs'}, axis='columns', inplace=True, errors="raise")
+
+    df_sum = dataframe_stats.sum(axis=0).to_frame().T
+    df_sum["Contigs"] = 'Total'
+    dataframe_stats = pd.concat([dataframe_stats, df_sum], ignore_index=False)
+
     # print(dataframe_stats)
     with open(output, "w") as out_csv_file:
         dataframe_stats.to_csv(out_csv_file, index=False)
-
 
 
 if __name__ == '__main__':
