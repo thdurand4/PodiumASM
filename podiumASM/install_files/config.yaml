@@ -5,7 +5,7 @@ DATA:
     LONG_READS: "./fastq_guppy6/"
     REPEAT_DB: "./P_Fijiensis-families.fa"
     SHORT_READS : "./illumina/"
-    SCRIPTS : "./scripts/"
+
 
 TOOLS_PARAM:
     BUSCO_DATABASE: "capnodiales_odb10"

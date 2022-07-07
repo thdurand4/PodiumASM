@@ -29,7 +29,6 @@ db_busco = config["TOOLS_PARAM"]["BUSCO_DATABASE"]
 long_reads_dir = config["DATA"]["LONG_READS"]
 short_read_dir = config["DATA"]["SHORT_READS"]
 repeat_database = config["DATA"]["REPEAT_DB"]
-script_dir = config["DATA"]["SCRIPTS"]
 log_dir = f"{output_dir}LOGS/"
 
 # Change workdir to output path (slurm logs append on outdir)
