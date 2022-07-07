@@ -845,7 +845,8 @@ rule assemblytics:
     shell:
         """
         (Assemblytics {input.delta} {params.prefix} {params.option_assemblytics}
-        mv {params.prefix}* {params.directory_as}) 1>{log.output} 2>{log.error}
+        cp -R {params.prefix}* {params.directory_as}
+        rm -rf {params.prefix}*) 1>{log.output} 2>{log.error}
         """
 
 rule tapestry:
