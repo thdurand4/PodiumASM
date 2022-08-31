@@ -71,13 +71,21 @@ def get_last_version(url, current_version):
         module_mane = url.split('/')[-1]
         HTML = urlopen(f"{url}/tags").read().decode('utf-8')
         str_search = f"{url.replace('https://github.com', '')}/releases/tag/.*"
-        lastRelease = search(str_search, HTML).group(0).split("/")[-1].split('"')[0]
+        try:
+            lastRelease = search(str_search, HTML).group(0).split("/")[-1].split('"')[0]
+        except Exception as e:
+            lastRelease = "There aren’t any releases"
         epilogTools = "\n"
         if str(current_version) != lastRelease:
             if lastRelease < str(current_version):
                 epilogTools = click.style(f"\n    ** NOTE: This {module_mane} version ({current_version}) is higher than the production version ({lastRelease}), you are using a dev version\n\n", fg="yellow", bold=True)
-            elif lastRelease > str(current_version):
+            elif lastRelease > str(current_version) and lastRelease != "There aren’t any releases":
                 epilogTools = click.style(f"\n    ** NOTE: The Latest version of {module_mane} {lastRelease} is available at {url}/releases\n\n",fg="yellow", underline=True)
+            elif lastRelease == "There aren’t any releases":
+                epilogTools = click.style(f"\n    ** NOTE: There aren’t any releases at the moment\n\n", fg="red", underline=False)
+            else:
+                epilogTools = click.style(f"\n    ** NOTE: Can't check if new release are available\n\n", fg="red", underline=False)
+
         return epilogTools
     except Exception as e:
         epilogTools = click.style(f"\n    ** ENABLE TO GET LAST VERSION, check internet connection\n{e}\n\n", fg="red")

@@ -115,7 +115,7 @@ sample_list = c()
 
 sv = NULL
 for (i in 1:length(csv_file_struct)) {
-  csv_all_struct = read.table(paste0(file=csv_dir_structural,csv_file_struct[i]),sep=",",header=FALSE)
+  csv_all_struct = read.table(paste0(file=csv_dir_structural,csv_file_struct[i]),sep=",",header=TRUE)
   csv_replace_sv = str_replace(csv_file_struct[i],".csv","")
   sample = unlist(strsplit(csv_replace_sv, "_"))[1]
   if (sample %in% sample_list)
@@ -128,7 +128,6 @@ for (i in 1:length(csv_file_struct)) {
   }
   sv = c(sv, newsample, knit_expand(text="### {{csv_replace_sv}}\n\n{{dt}}\n\n", quiet = TRUE , echo =F,message=F,dt = (DT::datatable(csv_all_struct, caption =" Structural variation (descriptif)",
               rownames = NULL,
-              colnames = c("Structural Variants","Counts"),
               escape = FALSE,
               class = 'table table-striped table-bordered table-hover',
               extensions = 'Buttons',
