@@ -5,7 +5,7 @@
 
 |PythonVersions| |SnakemakeVersions| |readthedocs|
 
-
+|readthedocs| |readthedocs|
 
 
 .. contents:: Table of Contents
