@@ -15,7 +15,7 @@ About podiumASM
 
 |readthedocs|
 
-**Homepage:** `https://podiumASM.readthedocs.io/en/latest/ <https://podiumASM.readthedocs.io/en/latest/>`_
+**Homepage:** `https://workflow_kmer.readthedocs.io/en/latest/ <https://workflow-kmer.readthedocs.io/en/latest/>`_
 
 
 PodiumASM is best workflow to helped selected of best assemblies between multiple assemblers tools !!!
