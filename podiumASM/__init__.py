@@ -12,7 +12,7 @@ __doc__ = """BLABLA"""
 
 description_tools = f"""
     Welcome to PodiumASM version: {__version__}! Created on January 2022
-    @author: Sebastien Ravel (CIRAD), Theo Durant, Simon Bache
+    @author: Sebastien Ravel (CIRAD), Theo Durand, Simon Bache
     @email: sebastien.ravel@cirad.fr
        
     Please cite our github: {GIT_URL}
