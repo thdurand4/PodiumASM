@@ -1,6 +1,6 @@
 .. raw:: html
 
-   <img src="https://raw.githubusercontent.com/thdurand4/PodiumASM/main/docs/img/PodiumASM_logo.png" align="center" alt="podiumASM Logo">
+   <img src="https://raw.githubusercontent.com/thdurand4/PodiumASM/main/docs/img/PodiumASM_logo.png" align="middle" alt="podiumASM Logo">
 
 
 |PythonVersions| |SnakemakeVersions|
