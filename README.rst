@@ -1,4 +1,6 @@
+.. raw:: html
 
+   <img src="https://raw.githubusercontent.com/thdurand4/PodiumASM/main/docs/img/PodiumASM_logo.png" align="right" alt="podiumASM Logo">
 
 
 |PythonVersions| |SnakemakeVersions|
@@ -13,7 +15,7 @@ About podiumASM
 
 |readthedocs|
 
-**Homepage:** `https://workflow_kmer.readthedocs.io/en/latest/ <https://workflow-kmer.readthedocs.io/en/latest/>`_
+**Homepage:** `https://podiumasm.readthedocs.io/en/latest/ <https://podiumasm.readthedocs.io/en/latest/>`_
 
 
 PodiumASM is best workflow to helped selected of best assemblies between multiple assemblers tools !!!
@@ -36,6 +38,7 @@ ________
 
 License
 =======
+
 Licencied under `CeCill-C <http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html>`_ and GPLv3.
 
 Intellectual property belongs to CIRAD and authors.
