@@ -5,8 +5,6 @@
 
 |PythonVersions| |SnakemakeVersions| 
 
-|readthedocs|
-
 
 .. contents:: Table of Contents
     :depth: 2
@@ -16,7 +14,7 @@ About podiumASM
 
 |readthedocs|
 
-**Homepage:** `https://podiumasm.readthedocs.io/en/latest/ <https://podiumasm.readthedocs.io/en/latest/>`_
+**Homepage:** `https://podiumasm.readthedocs.io/en/latest/ <https://podiumasm.readthedocs.io/en/latest/>`
 
 
 PodiumASM is best workflow to helped selected of best assemblies between multiple assemblers tools !!!
