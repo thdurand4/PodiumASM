@@ -12,6 +12,7 @@
 About podiumASM
 ===============
 
+|readthedocs|
 
 **Homepage:** `https://podiumasm.readthedocs.io/en/latest/ <https://podiumasm.readthedocs.io/en/latest/>`_
 
