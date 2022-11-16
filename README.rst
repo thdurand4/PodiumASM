@@ -1,5 +1,5 @@
-.. image:: docs/source/_images/podiumASM_logo.png
-   :target: docs/source/_images/podiumASM_logo.png
+.. image:: https://raw.githubusercontent.com/thdurand4/PodiumASM/docs/img/podiumASM_logo.png
+   :target: https://raw.githubusercontent.com/thdurand4/PodiumASM/docs/img/podiumASM_logo.png
    :align: center
    :alt: podiumASM Logo
 
