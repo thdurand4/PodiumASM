@@ -1,5 +1,5 @@
 .. image:: https://raw.githubusercontent.com/thdurand4/PodiumASM/main/docs/img/PodiumASM_logo.png
-   :align: right
+   :align: center
    :alt: podiumASM Logo
 
 |PythonVersions| |SnakemakeVersions|
