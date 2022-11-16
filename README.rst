@@ -17,13 +17,16 @@ About podiumASM
 **Homepage:** `https://podiumasm.readthedocs.io/en/latest/ <https://podiumasm.readthedocs.io/en/latest/>`_
 
 
-PodiumASM is best workflow to helped selected of best assemblies between multiple assemblers tools !!!
+Long-read sequencing is a highly accurate approach that can be used to
+challenging genomes, such as those containing stretches of highly 
+repetitive elements and lot of structural variant. Long read can also sequencing
+be used to generate de novo assembly and genome finishing applications
 
-# TODO
+Lot of tools are used to make genome assembly with long reads every day
+and you sometimes you don't know wich Assembler tool is the best for
+your organism. 
 
-- install tapestry
--
-
+**PodiumASM is here for you !** PodiumASM is is an open-source, scalable, modulable and traceable snakemake pipeline, able to compare multiple long read assemblies obtained from multiple assemblers tools. The workflow PodiumASM can help you to choose the best assemblies among all possibilities.
 
 Citation
 ________
