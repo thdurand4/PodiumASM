@@ -3,7 +3,8 @@
    <img src="https://raw.githubusercontent.com/thdurand4/PodiumASM/main/docs/img/PodiumASM_logo.png" align="right" alt="podiumASM Logo">
 
 
-|PythonVersions| |SnakemakeVersions|
+|PythonVersions| |SnakemakeVersions| |readthedocs|
+
 
 
 
