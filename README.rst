@@ -5,6 +5,8 @@
 
 |PythonVersions| |SnakemakeVersions|
 
+
+
 .. contents:: Table of Contents
     :depth: 2
 
@@ -23,8 +25,12 @@ PodiumASM is best workflow to helped selected of best assemblies between multipl
 - install tapestry
 -
 
+
+Citation
+________
+
 Authors
-=======
+________
 
 * Sébastien RAVEL (CIRAD).
 * Théo DURANT (internship M2 CIRAD).
