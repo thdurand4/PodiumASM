@@ -19,7 +19,7 @@ About podiumASM
 
 Long-read sequencing is a highly accurate approach that can be used to
 challenging genomes, such as those containing stretches of highly 
-repetitive elements and lot of structural variant. Long read can also sequencing
+repetitive elements and lot of structural variant. Long read sequencing can also
 be used to generate de novo assembly and genome finishing applications
 
 Lot of tools are used to make genome assembly with long reads every day
