@@ -37,13 +37,6 @@ PodiumASM is is an open-source, scalable, modulable and traceable snakemake pipe
    PROJECT.rst
 
 .. toctree::
-   :caption: FAQ
-   :name: faq_questions
-   :maxdepth: 2
-
-   FAQ.rst
-
-.. toctree::
    :caption: API
    :name: api_culebront
    :maxdepth: 2
