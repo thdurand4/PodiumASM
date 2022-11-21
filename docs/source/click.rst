@@ -1,3 +1,3 @@
-.. click:: PodiumASMT.main:main
+.. click:: PodiumASM.main:main
    :prog: PodiumASM
    :nested: full
