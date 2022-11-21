@@ -15,8 +15,8 @@ CulebrONT allows you to build a workflow using a simple ``config.yaml`` configur
 To create this file, just run:
 
 
-.. click:: culebrONT.main:create_config
-    :prog: culebrONT create_config
+.. click:: PodiumASM.main:create_config
+    :prog: PodiumASM create_config
     :show-nested:
 
 Then, edit the relevant sections of the file to customize your flavor of a workflow.
@@ -70,7 +70,7 @@ Feel free to activate only assembly, assembly+polishing or assembly+polishing+co
 
 Example:
 
-.. literalinclude:: ../../culebrONT/install_files/config.yaml
+.. literalinclude:: ../../PodiumASM/install_files/config.yaml
     :language: YAML
     :lines: 10-27
 
@@ -86,7 +86,7 @@ CulebrONT can use several quality control tools to check assemblies.
 
 * KAT and MERQURY quality tools can be activated but Illumina reads are mandatory in this case. These reads can be compressed or not.
 
-.. literalinclude:: ../../culebrONT/install_files/config.yaml
+.. literalinclude:: ../../PodiumASM/install_files/config.yaml
     :language: YAML
     :lines: 29-38
 
@@ -95,7 +95,7 @@ If several assemblers are activated, a multiple alignment of the various assembl
 * If you want to improve alignment with MAUVE on circular molecules, it is recommended to activate the *Fixstart* step.
 * Only activate MAUVE if you have more than one assembler per sample, more than one quality step and small genomes.
 
-.. literalinclude:: ../../culebrONT/install_files/config.yaml
+.. literalinclude:: ../../PodiumASM/install_files/config.yaml
     :language: YAML
     :lines: 41-43
 
@@ -131,7 +131,7 @@ You can manage tools parameters on the params section in the ``config.yaml`` fil
 
 The standard parameters used in CulebrONT are shown below. Feel free to adapt it to your own requirements.
 
-.. literalinclude:: ../../culebrONT/install_files/config.yaml
+.. literalinclude:: ../../PodiumASM/install_files/config.yaml
     :language: YAML
     :lines: 46-
 
@@ -149,16 +149,16 @@ Before attempting to run CulebrONT, please verify that you have already modified
 If you installed CulebrONT on a HPC cluster with a job scheduler, you can run:
 
 
-.. click:: culebrONT.main:run_cluster
-    :prog: culebrONT run_cluster
+.. click:: PodiumASM.main:run_cluster
+    :prog: PodiumASM run_cluster
     :show-nested:
 
 
 ------------------------------------------------------------------------
 
 
-.. click:: culebrONT.main:run_local
-    :prog: culebrONT run_local
+.. click:: PodiumASM.main:run_local
+    :prog: PodiumASM run_local
     :show-nested:
 
 ------------------------------------------------------------------------
@@ -171,8 +171,8 @@ Providing more resources
 
 If the cluster default resources are not sufficient, you can edit the ``cluster_config.yaml`` file. See :ref:`2. Adapting *cluster_config.yaml*`:
 
-.. click:: culebrONT.main:edit_cluster_config
-    :prog: culebrONT edit_cluster_config
+.. click:: PodiumASM.main:edit_cluster_config
+    :prog: PodiumASM edit_cluster_config
     :show-nested:
 
 
@@ -183,8 +183,8 @@ Providing your own tools_config.yaml
 
 To change the tools used in a CulebrONT workflow, you can see :ref:`3. How to configure tools_path.yaml`
 
-.. click:: culebrONT.main:edit_tools
-    :prog: culebrONT edit_tools
+.. click:: PodiumASM.main:edit_tools
+    :prog: PodiumASM edit_tools
     :show-nested:
 
 ------------------------------------------------------------------------
