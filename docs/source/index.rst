@@ -4,7 +4,7 @@ Welcome to PodiumASM's documentation!
 
 .. raw:: html
 
-   <img src="https://raw.githubusercontent.com/thdurand4/PodiumASM/main/docs/img/PodiumASM_logo.png" align="right" alt="podiumASM Logo">
+   <img src="https://raw.githubusercontent.com/thdurand4/PodiumASM/main/docs/source/_images/PodiumASM_logo.png" align="right" alt="podiumASM Logo">
 
 Today, assembly a genome using long reads from either Oxford Nanopore Technologies or Pacific Biosciences is really powerful, in particular to solve repeats and structural variants, for prokaryotic as well as for eukaryotic genomes. Such technologies provide assemblies that are increased in contiguity and accuracy.
 
