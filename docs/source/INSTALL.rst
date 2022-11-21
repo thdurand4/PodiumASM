@@ -30,8 +30,8 @@ Steps for LOCAL installation
 
 Install CulebrONT in a *local* (single machine) mode using ``culebrONT install_local`` command line.
 
-.. click:: culebrONT.main:install_local
-   :prog: culebrONT install_local
+.. click:: PodiumASM.main:install_local
+   :prog: PodiumASM install_local
    :show-nested:
 
 To create a pipeline, tools used by CulebrONT are wrapped into ``Singularity images``. These images are automatically downloaded and used by the configuration files of the pipeline. Local mode install, without scheduler, is constrains to use these Singularity images.
@@ -53,8 +53,8 @@ Run the command `culebrONT install_cluster` to install on a HPC cluster.
 We tried to make cluster installation as easy as possible, but it is somehow necessary to adapt a few files according to your cluster environment.
 
 
-.. click:: culebrONT.main:install_cluster
-   :prog: culebrONT install_cluster
+.. click:: PodiumASM.main:install_cluster
+   :prog: PodiumASM install_cluster
    :show-nested:
 
 1. Adapt `profile` and `cluster_config.yaml`
@@ -98,8 +98,8 @@ Check install
 
 In order to test your install of CulebrONT, a data test called ``Data-Xoo-sub/`` is available at https://itrop.ird.fr/culebront_utilities/.
 
-.. click:: culebrONT.main:test_install
-   :prog: culebrONT test_install
+.. click:: PodiumASM.main:test_install
+   :prog: PodiumASM test_install
    :show-nested:
 
 This dataset will be automatically downloaded by CulebrONT in the ``-d`` repertory using :
@@ -194,7 +194,7 @@ In the ``tools_path`` file, you can find two sections: SINGULARITY and ENVMODULE
 1. Use only SINGULARITY containers: in this case, fill only this section. Put the path to the built Singularity images you want to use.
 Absolute paths are strongly recommended. See the section :ref:`'How to build singularity images'<How to build singularity images>`  for further details.
 
-.. literalinclude:: ../../culebrONT/install_files/tools_path.yaml
+.. literalinclude:: ../../PodiumASM/install_files/tools_path.yaml
    :language: YAML
    :lines: 6-8
 
@@ -205,7 +205,7 @@ Absolute paths are strongly recommended. See the section :ref:`'How to build sin
 
 2. Use only ENVMODULES: in this case, fill this section with the modules available on your cluster (here is an example):
 
-.. literalinclude:: ../../culebrONT/install_files/tools_path.yaml
+.. literalinclude:: ../../PodiumASM/install_files/tools_path.yaml
    :language: YAML
    :lines: 10-18
 
