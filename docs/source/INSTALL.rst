@@ -5,21 +5,21 @@
 Requirements
 ============
 
-CulebrONT requires |PythonVersions|, |graphviz| and |RVersions|.
+PodiumASM requires |PythonVersions| and |RVersions|.
 
-CulebrONT is developed to work mostly on an HPC distributed cluster but a local, single machine, installation is also possible.
+PodiumASM is developed to work on an HPC distributed cluster.
 
 ------------------------------------------------------------------------
 
-Install CulebrONT PyPI package
+Install PodiumASM PyPI package
 ===============================
 
-First, install the CulebrONT python package with pip.
+First, install the PodiumASM python package with pip.
 
 .. code-block:: bash
 
-   python3 -m pip install culebrONT
-   culebrONT --help
+   python3 -m pip install podiumASM
+   podiumASM --help
 
 Now, follow this documentation according to what you want, local or HPC mode.
 
@@ -64,22 +64,17 @@ See the section :ref:`2. Adapting *cluster_config.yaml*` for further details.
 2. Adapt `tools_path.yaml`
 --------------------------
 
-As CulebrONT uses many tools, you must install them using one of the two following possibilities:
+As PodiumASM uses many tools, you must install them using env modules possibilities :
 
-1. Either through the |Singularity| containers,
-
-2. Or using the ``module load`` mode,
+1. Or using the ``module load`` mode,
 
 .. code-block:: bash
 
-   culebrONT install_cluster --help
-   culebrONT install_cluster --scheduler slurm --env modules
-   # OR
-   culebrONT install_cluster --scheduler slurm --env singularity
+   podiumASM install_cluster --help
+   podiumASM install_cluster --scheduler slurm --env modules
 
-If ``--env singularity`` argument is specified, CulebrONT will download previously build Singularity images, containing the complete environment need to run CulebrONT (tools and dependencies).
 
-Adapt the file :file:``tools_path.yaml`` - in YAML (Yet Another Markup Language) - format  to indicate CulebrONT where the different tools are installed on your cluster.
+Adapt the file :file:``tools_path.yaml`` - in YAML (Yet Another Markup Language) - format to indicate podiumASM where the different tools are installed on your cluster.
 See the section :ref:`3. How to configure tools_path.yaml` for details.
 
 
