@@ -15,10 +15,6 @@ CulebrONT allows you to build a workflow using a simple ``config.yaml`` configur
 To create this file, just run:
 
 
-.. click:: podiumASM.main:create_config
-    :prog: podiumASM create_config
-    :show-nested:
-
 Then, edit the relevant sections of the file to customize your flavor of a workflow.
 
 
@@ -149,20 +145,6 @@ Before attempting to run CulebrONT, please verify that you have already modified
 If you installed CulebrONT on a HPC cluster with a job scheduler, you can run:
 
 
-.. click:: podiumASM.main:run_cluster
-    :prog: podiumASM run_cluster
-    :show-nested:
-
-
-------------------------------------------------------------------------
-
-
-.. click:: podiumASM.main:run_local
-    :prog: podiumASM run_local
-    :show-nested:
-
-------------------------------------------------------------------------
-
 Advance run
 ===========
 
@@ -171,23 +153,11 @@ Providing more resources
 
 If the cluster default resources are not sufficient, you can edit the ``cluster_config.yaml`` file. See :ref:`2. Adapting *cluster_config.yaml*`:
 
-.. click:: podiumASM.main:edit_cluster_config
-    :prog: podiumASM edit_cluster_config
-    :show-nested:
-
-
-------------------------------------------------------------------------
 
 Providing your own tools_config.yaml
 -------------------------------------
 
 To change the tools used in a CulebrONT workflow, you can see :ref:`3. How to configure tools_path.yaml`
-
-.. click:: podiumASM.main:edit_tools
-    :prog: podiumASM edit_tools
-    :show-nested:
-
-------------------------------------------------------------------------
 
 Output on CulebrONT
 ===================
