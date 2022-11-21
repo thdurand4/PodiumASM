@@ -23,7 +23,7 @@ repetitive elements and lot of structural variant. Long read sequencing can also
 be used to generate de novo assembly and genome finishing applications
 
 Lot of tools are used to make genome assembly with long reads every day
-and you sometimes you don't know wich Assembler tool is the best for
+and sometimes you don't know wich Assembler tool is the best for
 your organism. 
 
 **PodiumASM is here for you !** PodiumASM is is an open-source, scalable, modulable and traceable snakemake pipeline, able to compare multiple long read assemblies obtained from multiple assemblers tools. The workflow PodiumASM can help you to choose the best assemblies among all possibilities.
