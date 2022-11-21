@@ -38,7 +38,7 @@ Authors
 ________
 
 * Sébastien RAVEL (CIRAD).
-* Théo DURANT (internship M2 CIRAD).
+* Théo DURAND (internship M2 CIRAD).
 * Simon BACHE (internship M2 CIRAD).
 
 License
