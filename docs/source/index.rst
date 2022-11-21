@@ -1,30 +1,19 @@
-Welcome to CulebrONT's documentation!
+Welcome to PodiumASM's documentation!
 =====================================
 
 
-.. image:: _images/culebront_logo.png
-   :target: _images/culebront_logo.png
-   :align: center
-   :alt: Culebront Logo
+.. raw:: html
+
+   <img src="https://raw.githubusercontent.com/thdurand4/PodiumASM/main/docs/img/PodiumASM_logo.png" align="right" alt="podiumASM Logo">
 
 Today, assembly a genome using long reads from either Oxford Nanopore Technologies or Pacific Biosciences is really powerful, in particular to solve repeats and structural variants, for prokaryotic as well as for eukaryotic genomes. Such technologies provide assemblies that are increased in contiguity and accuracy.
 
-Due to the daily deluge of data sequences and the increasing number of released tools that are even updated every week, many species see having their genome assembled in almost chromosome-scale, and that’s great...
+Due to the daily deluge of data sequences and the increasing number of released tools that are even updated every week, many species see having their genome assembled.
 
-However a huge question remains:
+But when you have to make an assembly of your species and don't know which assembler is the best for your organism, PodiumASM can help you
 
-"\ *But which assembly tool will provide the best result for your favorite organism?*\ "
+PodiumASM is is an open-source, scalable, modulable and traceable snakemake pipeline, able to compare multiple long read assemblies obtained from multiple assemblers tools. The workflow PodiumASM can help you to choose the best assemblies among all possibilities.
 
-To that anguishing idea, we can answer: **CulebrONT can help you!**
-
-CulebrONT is an open-source, scalable, modular and traceable *Snakemake* pipeline, able to launch multiple assembly tools in parallel, giving you the possibility of circularise, polish, and correct assemblies, in addition to perform quality controls. CulebrONT can help to choose the best assembly pipeline between all possibilities.
-
-.. toctree::
-   :caption: About CulebrONT
-   :name: about_culebront
-   :maxdepth: 2
-
-   ABOUT.rst
 
 .. toctree::
    :caption: Install
