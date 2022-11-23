@@ -28,19 +28,19 @@ Now, follow this documentation according to what you want, local or HPC mode.
 Steps for LOCAL installation
 ============================
 
-Install CulebrONT in a *local* (single machine) mode using ``culebrONT install_local`` command line.
+Install PodiumASM in a *local* (single machine) mode using ``podiumASM install_local`` command line.
 
 .. click:: podiumASM.main:install_local
    :prog: podiumASM install_local
    :show-nested:
 
-To create a pipeline, tools used by CulebrONT are wrapped into ``Singularity images``. These images are automatically downloaded and used by the configuration files of the pipeline. Local mode install, without scheduler, is constrains to use these Singularity images.
+To create a pipeline, tools used by PodiumASM are wrapped into ``Singularity images``. These images are automatically downloaded and used by the configuration files of the pipeline. Local mode install, without scheduler, is constrains to use these Singularity images.
 
 .. warning::
-   Singularity images are downloaded in the location of the package CulebrONT. Be careful these images need at approximatly 4G of free space. If installed with Pypi with the flag --user (without root), the package is installed in your HOME.
+   Singularity images are downloaded in the location of the package PodiumASM. Be careful these images need at approximatly 4G of free space. If installed with Pypi with the flag --user (without root), the package is installed in your HOME.
 
 
-Optionally (but recommended), after installing in local, you can check the CulebrONT installation using a dataset scaled for single machine.
+Optionally (but recommended), after installing in local, you can check the PodiumASM installation using a dataset scaled for single machine.
 See the section :ref:`Check install` for details.
 
 ------------------------------------------------------------------------
@@ -48,8 +48,8 @@ See the section :ref:`Check install` for details.
 Steps for HPC distributed cluster installation
 ==============================================
 
-CulebrONT uses any available snakemake profiles to ease cluster installation and resources management.
-Run the command `culebrONT install_cluster` to install on a HPC cluster.
+PodiumASM uses any available snakemake profiles to ease cluster installation and resources management.
+Run the command `podiumASM install_cluster` to install on a HPC cluster.
 We tried to make cluster installation as easy as possible, but it is somehow necessary to adapt a few files according to your cluster environment.
 
 
@@ -60,7 +60,7 @@ We tried to make cluster installation as easy as possible, but it is somehow nec
 1. Adapt `profile` and `cluster_config.yaml`
 ---------------------------------------------
 f
-Now that CulebrONT is installed, it proposes default configuration files, but they can be modified. Please check and adapt these files to your own system architecture.
+Now that PodiumASM is installed, it proposes default configuration files, but they can be modified. Please check and adapt these files to your own system architecture.
 
 1. Adapt the pre-formatted `f –env si`snakemake profile`` to configure your cluster options.
 See the section :ref:`1. Snakemake profiles` for details.
@@ -91,30 +91,30 @@ See the section :ref:`3. How to configure tools_path.yaml` for details.
 Check install
 ==============
 
-In order to test your install of CulebrONT, a data test called ``Data-Xoo-sub/`` is available at https://itrop.ird.fr/culebront_utilities/.
+In order to test your install of PodiumASM, a data test called ``Data-Xoo-sub/`` is available at https://itrop.ird.fr/culebront_utilities/.
 
 .. click:: podiumASM.main:test_install
    :prog: podiumASM test_install
    :show-nested:
 
 
-This dataset will be automatically downloaded by CulebrONT in the ``-d`` repertory using :
+This dataset will be automatically downloaded by PodiumASM in the ``-d`` repertory using :
 
 .. code-block:: bash
 
-   culebrONT test_install -d test
+   podiumASM test_install -d test
 
 Launching the (suggested, to be adapted) command line in CLUSTER mode will perform the tests:
 
 .. code-block:: bash
 
-   culebrONT run_cluster --config test/data_test_config.yaml
+   podiumASM run_cluster --config test/data_test_config.yaml
 
 In local mode, type :
 
 .. code-block:: bash
 
-   culebrONT run_local -t 8 -c test/data_test_config.yaml --singularity-args "--bind $HOME"
+   podiumASM run_local -t 8 -c test/data_test_config.yaml --singularity-args "--bind $HOME"
 
 
 ------------------------------------------------------------------------
@@ -129,16 +129,16 @@ Advance installation
 The Snakemake-profiles project is an open effort to create configuration profiles allowing to execute Snakemake in various computing environments
 (job scheduling systems as Slurm, SGE, Grid middleware, or cloud computing), and available at https://github.com/Snakemake-Profiles/doc.
 
-In order to run CulebrONT on HPC cluster, we take advantages of profiles.
+In order to run PodiumASM on HPC cluster, we take advantages of profiles.
 
-Quickly, see `here <https://github.com/SouthGreenPlatform/culebrONT/blob/master/culebrONT/install_files/cluster_config_SLURM.yaml>`_ an example of the Snakemake SLURM profile we used for the French national bioinformatics infrastructure at IFB.
+Quickly, see `here <https://github.com/SouthGreenPlatform/podiumASM/blob/master/podiumASM/install_files/cluster_config_SLURM.yaml>`_ an example of the Snakemake SLURM profile we used for the French national bioinformatics infrastructure at IFB.
 
 More info about profiles can be found here https://github.com/Snakemake-Profiles/slurm#quickstart.
 
 Preparing the profile's *config.yaml* file
 ******************************************
 
-Once your basic profile is created, to finalize it, modify as necessary the ``culebrONT/culebrONT/default_profile/config.yaml`` to customize Snakemake parameters that will be used internally by CulebrONT:
+Once your basic profile is created, to finalize it, modify as necessary the ``podiumASM/podiumASM/default_profile/config.yaml`` to customize Snakemake parameters that will be used internally by PodiumASM:
 
 .. code-block:: ini
 
@@ -168,7 +168,7 @@ or specifically, for each rule/tool depending on your HPC Job Scheduler (see `th
    of this file before running on your cluster.
 
 
-A list of CulebrONT rules names can be found in the section :ref:`Threading rules inside culebrONT`
+A list of PodiumASM rules names can be found in the section :ref:`Threading rules inside podiumASM`
 
 
 .. warning::
@@ -181,7 +181,7 @@ A list of CulebrONT rules names can be found in the section :ref:`Threading rule
 
 .. note::
     About versions of tools, the user can choose themself what version of tools to use with modules or with singularity.
-    HOWEVER, the pipeline was validated with specific versions (check the `singularity def <https://github.com/SouthGreenPlatform/culebrONT/blob/master/culebrONT/containers/Singularity.culebront_tools.def>`_) so it may leads to error due to parameter changes.
+    HOWEVER, the pipeline was validated with specific versions (check the `singularity def <https://github.com/SouthGreenPlatform/podiumASM/blob/master/podiumASM/containers/Singularity.culebront_tools.def>`_) so it may leads to error due to parameter changes.
     :ref:`Assembly`
 
 
@@ -205,7 +205,7 @@ Absolute paths are strongly recommended. See the section :ref:`'How to build sin
    :language: YAML
    :lines: 10-18
 
-CulebrONT needs a wide set of R modules for reporting. If you use ENVMODULE R, just have a look at dependencies in the ``Containers/Singularity.report.def`` file.
+PodiumASM needs a wide set of R modules for reporting. If you use ENVMODULE R, just have a look at dependencies in the ``Containers/Singularity.report.def`` file.
 Yes, plenty of packages!! That's why we provide build Singularity containers ready to use and recommend them for the R part.
 
 .. note::
@@ -228,23 +228,23 @@ And more ...
 How to build Singularity images
 *******************************
 
-You can build your own image using the available *.def* recipes from the ``culebrONT/culebrONT/containers/`` directory.
+You can build your own image using the available *.def* recipes from the ``podiumASM/podiumASM/containers/`` directory.
 
 .. warning::
    Be careful, you need root access to build Singularity images
 
 .. code-block:: bash
 
-   cd culebrONT/culebrONT/containers/
+   cd podiumASM/podiumASM/containers/
    sudo make build
 
-Threading rules inside CulebrONT
+Threading rules inside PodiumASM
 ********************************
 
-Please find here the rules names found in CulebrONT code.
+Please find here the rules names found in PodiumASM code.
 It is recommended to set threads using the snakemake command when running on a single machine,
 or in a cluster configuration file to manage cluster resources through the job scheduler.
-This would save users a painful exploration of the snakefiles of CulebrONT.
+This would save users a painful exploration of the snakefiles of PodiumASM.
 
 .. code-block:: python
 
