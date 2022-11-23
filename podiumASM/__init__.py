@@ -8,7 +8,11 @@ logo = INSTALL_PATH.joinpath('PodiumASM_logo.png').as_posix()
 
 __version__ = get_version()
 
-__doc__ = """BLABLA"""
+__doc__ = """Long-read sequencing is a highly accurate approach that can be used to challenging genomes, such as those containing stretches of highly repetitive elements and lot of structural variant. Long read sequencing can also be used to generate de novo assembly and genome finishing applications
+
+Lot of tools are used to make genome assembly with long reads every day and sometimes you don't know wich Assembler tool is the best for your organism.
+
+PodiumASM is here for you ! PodiumASM is is an open-source, scalable, modulable and traceable snakemake pipeline, able to compare multiple long read assemblies obtained from multiple assemblers tools. The workflow PodiumASM can help you to choose the best assemblies among all possibilities."""
 
 description_tools = f"""
     Welcome to PodiumASM version: {__version__}! Created on January 2022
