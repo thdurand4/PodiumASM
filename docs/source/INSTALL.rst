@@ -30,6 +30,9 @@ Steps for LOCAL installation
 
 Install CulebrONT in a *local* (single machine) mode using ``culebrONT install_local`` command line.
 
+.. click:: podiumASM.main:install_local
+   :prog: podiumASM install_local
+   :show-nested:
 
 To create a pipeline, tools used by CulebrONT are wrapped into ``Singularity images``. These images are automatically downloaded and used by the configuration files of the pipeline. Local mode install, without scheduler, is constrains to use these Singularity images.
 
@@ -48,6 +51,11 @@ Steps for HPC distributed cluster installation
 CulebrONT uses any available snakemake profiles to ease cluster installation and resources management.
 Run the command `culebrONT install_cluster` to install on a HPC cluster.
 We tried to make cluster installation as easy as possible, but it is somehow necessary to adapt a few files according to your cluster environment.
+
+
+.. click:: podiumASM.main:install_cluster
+   :prog: podiumASM install_cluster
+   :show-nested:
 
 1. Adapt `profile` and `cluster_config.yaml`
 ---------------------------------------------
@@ -84,6 +92,10 @@ Check install
 ==============
 
 In order to test your install of CulebrONT, a data test called ``Data-Xoo-sub/`` is available at https://itrop.ird.fr/culebront_utilities/.
+
+.. click:: podiumASM.main:test_install
+   :prog: podiumASM test_install
+   :show-nested:
 
 
 This dataset will be automatically downloaded by CulebrONT in the ``-d`` repertory using :
