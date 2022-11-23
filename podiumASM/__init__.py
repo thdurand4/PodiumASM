@@ -6,7 +6,7 @@ from .snakemake_module import Podium, parse_idxstats, check_mapping_stats, merge
 
 logo = INSTALL_PATH.joinpath('PodiumASM_logo.png').as_posix()
 
-__version__ = get_version()
+__version__ = "1.0.0"
 
 __doc__ = """Long-read sequencing is a highly accurate approach that can be used to challenging genomes, such as those containing stretches of highly repetitive elements and lot of structural variant. Long read sequencing can also be used to generate de novo assembly and genome finishing applications
 
