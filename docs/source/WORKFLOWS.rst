@@ -27,15 +27,9 @@ Then, edit the relevant sections of the file to customize your flavor of a workf
 
 First, indicate the data path in the ``config.yaml`` configuration file:
 
-.. code-block:: YAML
-
-   DATA:
-       FASTQ: '/path/to/fastq/directory/'
-       REF: '/path/to/referencefile.fasta'
-       GENOME_SIZE: '1m'
-       FAST5: '/path/to/fast5/directory/'
-       ILLUMINA: '/path/to/illumina/directory/'
-       OUTPUT: '/path/to/output/directory/'
+.. literalinclude:: ../../podiumASM/install_files/config.yaml
+    :language: YAML
+    :lines: 1-8
 
 Find here a summary table with the description of each data needed to run PodiumASM :
 
