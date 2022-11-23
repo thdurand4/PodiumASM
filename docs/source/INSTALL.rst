@@ -17,8 +17,10 @@ Install PodiumASM PyPI package
 First, install the PodiumASM python package with pip.
 
 .. code-block:: bash
-
-   python3 -m pip install podiumASM
+   
+   git clone https://github.com/thdurand4/PodiumASM.git
+   cd PodiumASM
+   python3 -m pip install .
    podiumASM --help
 
 Now, follow this documentation according to what you want, local or HPC mode.
@@ -34,14 +36,6 @@ Install PodiumASM in a *local* (single machine) mode using ``podiumASM install_l
    :prog: podiumASM install_local
    :show-nested:
 
-To create a pipeline, tools used by PodiumASM are wrapped into ``Singularity images``. These images are automatically downloaded and used by the configuration files of the pipeline. Local mode install, without scheduler, is constrains to use these Singularity images.
-
-.. warning::
-   Singularity images are downloaded in the location of the package PodiumASM. Be careful these images need at approximatly 4G of free space. If installed with Pypi with the flag --user (without root), the package is installed in your HOME.
-
-
-Optionally (but recommended), after installing in local, you can check the PodiumASM installation using a dataset scaled for single machine.
-See the section :ref:`Check install` for details.
 
 ------------------------------------------------------------------------
 
@@ -88,37 +82,6 @@ See the section :ref:`3. How to configure tools_path.yaml` for details.
 
 ------------------------------------------------------------------------
 
-Check install
-==============
-
-In order to test your install of PodiumASM, a data test called ``Data-Xoo-sub/`` is available at https://itrop.ird.fr/culebront_utilities/.
-
-.. click:: podiumASM.main:test_install
-   :prog: podiumASM test_install
-   :show-nested:
-
-
-This dataset will be automatically downloaded by PodiumASM in the ``-d`` repertory using :
-
-.. code-block:: bash
-
-   podiumASM test_install -d test
-
-Launching the (suggested, to be adapted) command line in CLUSTER mode will perform the tests:
-
-.. code-block:: bash
-
-   podiumASM run_cluster --config test/data_test_config.yaml
-
-In local mode, type :
-
-.. code-block:: bash
-
-   podiumASM run_local -t 8 -c test/data_test_config.yaml --singularity-args "--bind $HOME"
-
-
-------------------------------------------------------------------------
-
 Advance installation
 ====================
 
@@ -131,7 +94,7 @@ The Snakemake-profiles project is an open effort to create configuration profile
 
 In order to run PodiumASM on HPC cluster, we take advantages of profiles.
 
-Quickly, see `here <https://github.com/SouthGreenPlatform/podiumASM/blob/master/podiumASM/install_files/cluster_config_SLURM.yaml>`_ an example of the Snakemake SLURM profile we used for the French national bioinformatics infrastructure at IFB.
+Quickly, see `here <https://github.com/thdurand4/PodiumASM/blob/main/podiumASM/install_files/cluster_config_SLURM.yaml>`_ an example of the Snakemake SLURM profile we used for the French national bioinformatics infrastructure at IFB.
 
 More info about profiles can be found here https://github.com/Snakemake-Profiles/slurm#quickstart.
 
@@ -180,63 +143,21 @@ A list of PodiumASM rules names can be found in the section :ref:`Threading rule
 -----------------------------------
 
 .. note::
-    About versions of tools, the user can choose themself what version of tools to use with modules or with singularity.
-    HOWEVER, the pipeline was validated with specific versions (check the `singularity def <https://github.com/SouthGreenPlatform/podiumASM/blob/master/podiumASM/containers/Singularity.culebront_tools.def>`_) so it may leads to error due to parameter changes.
-    :ref:`Assembly`
+    About versions of tools, the user can choose themself what version of tools to use with modules.
 
 
-In the ``tools_path`` file, you can find two sections: SINGULARITY and ENVMODULES. In order to fill it correctly, you have 2 options:
+In the ``tools_path`` file, you can find one section: ENVMODULES. In order to fill it correctly, you have 1 options:
 
-1. Use only SINGULARITY containers: in this case, fill only this section. Put the path to the built Singularity images you want to use.
-Absolute paths are strongly recommended. See the section :ref:`'How to build singularity images'<How to build singularity images>`  for further details.
-
-.. literalinclude:: ../../podiumASM/install_files/tools_path.yaml
-   :language: YAML
-   :lines: 6-8
-
-.. warning::
-   To ensure SINGULARITY containers to be really used, one needs to make
-   sure that the *--use-singularity* flag is included in the snakemake command line.
-
-
-2. Use only ENVMODULES: in this case, fill this section with the modules available on your cluster (here is an example):
+1. Use only ENVMODULES: in this case, fill this section with the modules available on your cluster (here is an example):
 
 .. literalinclude:: ../../podiumASM/install_files/tools_path.yaml
    :language: YAML
    :lines: 10-18
 
-PodiumASM needs a wide set of R modules for reporting. If you use ENVMODULE R, just have a look at dependencies in the ``Containers/Singularity.report.def`` file.
-Yes, plenty of packages!! That's why we provide build Singularity containers ready to use and recommend them for the R part.
-
-.. note::
-   TIP !! We provide a Singularity container for all R packages (Singularity.report.def),
-   thus you can use this one to create a dedicated module environment.
-
-
-.. warning::
-   Make sure to specify the *--use-envmodules* flag in the snakemake command
-   line for ENVMODULE to be implemented.
-   More details can be found here:
-   https://snakemake.readthedocs.io/en/stable/snakefiles/deployment.html#using-environment-modules
-
-
 ------------------------------------------------------------------------
 
 And more ...
 -------------
-
-How to build Singularity images
-*******************************
-
-You can build your own image using the available *.def* recipes from the ``podiumASM/podiumASM/containers/`` directory.
-
-.. warning::
-   Be careful, you need root access to build Singularity images
-
-.. code-block:: bash
-
-   cd podiumASM/podiumASM/containers/
-   sudo make build
 
 Threading rules inside PodiumASM
 ********************************
@@ -248,57 +169,33 @@ This would save users a painful exploration of the snakefiles of PodiumASM.
 
 .. code-block:: python
 
-   run_flye
-   run_canu
-   run_minimap_for_miniasm
-   run_miniasm
-   run_minipolish
-   run_raven
-   convert_fastq_to_fasta
-   run_smartdenovo
-   run_shasta
-   run_circlator
-   tag_circular
-   tag_circular_to_minipolish
-   rotate_circular
-   run_fixstart
-   run_makerange
-   run_nanopolish_index
-   preparing_ref_to_nanopolish
-   run_nanopolish_variants
-   run_nanopolish_merge
-   index_fasta_to_correction
-   run_minialign_to_medaka
-   run_medaka_train
-   run_medaka_consensus
-   run_medaka_merge
-   run_pilon_first_round
-   run_pilon
-   run_racon
-   preparing_fasta_to_quality
-   run_quast
-   run_busco
-   run_diamond
-   run_minimap2
-   run_blobtools
-   run_mummer
-   run_assemblytics
-   combined_fastq
-   run_KAT
-   run_mauve
-   run_bwa_mem2
-   run_flagstat
-   final
-   rule_graph
-   run_report_snakemake
-   run_flagstats_stats
-   run_busco_stats
-   run_racon_version
-   run_busco_version
-   run_benchmark_time
-   run_get_versions
-   stats_assembly
-   run_report
+   rename_contigs
+   busco
+   busco_figure
+   bwa_index
+   bwa_mem_sort_bam
+   samtools_index_illumina
+   samtools_idxstats
+   merge_idxstats
+   samtools_depth
+   samtools_depth_to_csv
+   merge_samtools_depth_stats
+   quast_full_contigs
+   minimap2
+   samtools_index
+   sniffles
+   variant_per_contig
+   align_assembly
+   coverage
+   repeatmodeler
+   repeatmasker
+   remove_contigs
+   mummer
+   assemblytics
+   tapestry
+   genome_stats
+   report_stats_contig
+   finale
 
 
 
