@@ -53,5 +53,5 @@ Intellectual property belongs to CIRAD and authors.
 .. |SnakemakeVersions| image:: https://img.shields.io/badge/snakemake-≥5.10.0-brightgreen.svg?style=flat
    :target: https://snakemake.readthedocs.io
 .. |readthedocs| image:: https://pbs.twimg.com/media/E5oBxcRXoAEBSp1.png
-   :target: https://workflow_kmer.readthedocs.io/en/latest/
+   :target: https://podiumasm.readthedocs.io/en/latest
    :width: 400px
