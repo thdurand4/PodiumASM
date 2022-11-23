@@ -1,3 +1,19 @@
+import podiumASM
+from podiumASM.snakeWrapper.global_variable import *
+
+# The short X.Y version.
+version = podiumASM.__version__
+# The full version, including alpha/beta/rc tags
+release = podiumASM.__version__
+
+rst_prolog = f"""
+.. |tools_path| replace:: {GIT_TOOLS_PATH}
+"""
+
+
+
+
+
 # -- Project information -----------------------------------------------------
 # General information about the project.
 project = 'PodiumASM'
