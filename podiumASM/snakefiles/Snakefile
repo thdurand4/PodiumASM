@@ -901,7 +901,7 @@ rule report_stats_contig:
         tapestry_out=expand(rules.tapestry.output.tapestry_report,samples=ASSEMBLIES),
         csv_var_per_contig=expand(rules.variant_per_contig.output.csv_var_per_contig,samples=ASSEMBLIES)
     output:
-        report=f"{output_dir}/report.html"
+        report=f"{output_dir}report.html"
     params:
         csv_all_dir=f"{output_dir}2_GENOME_STATS/STAT_CSV",
         csv_struct_dir=f"{output_dir}4_STRUCTURAL_VAR/csv_variants",
