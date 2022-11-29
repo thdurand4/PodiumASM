@@ -53,7 +53,7 @@ module-whatis   "loads the [module-info name] environment"
 ## Software-specific settings exported to user environment
 prepend-path PATH $prefix
 """
-"""
+
 
 description_tools = f"""
     Welcome to PodiumASM version: {__version__}! Created on January 2022
