@@ -68,7 +68,7 @@ See the section :ref:`2. Adapting *cluster_config.yaml*` for further details.
 
 As PodiumASM uses many tools, you must install them using env modules possibilities :
 
-1. Or using the ``module load`` mode,
+1. Using the ``module load`` mode,
 
 .. code-block:: bash
 
