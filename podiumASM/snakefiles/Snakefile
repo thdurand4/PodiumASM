@@ -98,7 +98,7 @@ def get_fastq_file_long_read(wildcards):
 # --- Main Build Rules --- #
 rule finale:
     input:
-        report_stat_final=f"{output_dir}/report.html"
+        report_stat_final=f"{output_dir}report.html"
 
 rule rename_contigs:
     threads: get_threads("rename_contigs",1)
