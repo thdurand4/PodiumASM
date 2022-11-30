@@ -20,7 +20,7 @@ First, install the PodiumASM python package with pip.
    
    git clone https://github.com/thdurand4/PodiumASM.git
    cd PodiumASM
-   python3 -m pip install .
+   python3 -m pip install -e .
    podiumASM --help
 
 Now, follow this documentation according to what you want, local or HPC mode.
