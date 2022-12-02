@@ -10,7 +10,7 @@ import sys
 site.ENABLE_USER_SITE = "--user" in sys.argv[1:]
 
 NAME = "podiumASM"
-URL = "https://github.com/sravel/podiumASM"
+URL = "https://github.com/thdurand4/PodiumASM/"
 CURRENT_PATH = Path(__file__).resolve().parent
 VERSION = str(CURRENT_PATH.joinpath("podiumASM", "VERSION").open('r').readline().strip())
 
@@ -30,10 +30,10 @@ def main():
         },
         download_url=f"{URL}/archive/{VERSION}.tar.gz",
         author="""Ravel Sebastien (CIRAD)
-                    Théo DURANT (internship M2 CIRAD).
-                    Simon BACHE (internship M2 CIRAD).
+                    Théo DURAND (M2 CIRAD).
+                    Simon BACHE (M2 CIRAD).
                 """,
-        author_email="sebastien.ravel@cirad.fr",
+        author_email="theo.durand@cirad.fr",
         description=__doc__.replace("\n", ""),
         long_description=CURRENT_PATH.joinpath('README.rst').open("r", encoding='utf-8').read(),
         long_description_content_type='text/x-rst',
