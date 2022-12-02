@@ -88,6 +88,12 @@ Before attempting to run PodiumASM, please verify that you have already modified
    cd PodiumASM/podiumASM/default_profile
    nano slurm-submit.py
 
+Comment this line : 
+
+.. literalinclude:: ../../podiumASM/bug_cookie/slurm-submit.py
+    :language: python
+    :lines: 1-8
+
 
 If you installed PodiumASM on a HPC cluster with a job scheduler, you can run:
 
