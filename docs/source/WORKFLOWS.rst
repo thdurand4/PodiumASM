@@ -79,6 +79,16 @@ How to run the workflow
 
 Before attempting to run PodiumASM, please verify that you have already modified the ``config.yaml`` file as explained in :ref:`1. Providing data`.
 
+.. warning::
+
+   Due to a bug of CookieCutter before attempting to run PodiumASM you have to go in PodiumASM profile and comment one line in slurm-submit.py  : 
+
+.. code-block:: bash
+
+   cd PodiumASM/podiumASM/default_profile
+   nano slurm-submit.py
+
+
 If you installed PodiumASM on a HPC cluster with a job scheduler, you can run:
 
 
@@ -118,35 +128,51 @@ The architecture of the PodiumASM output is designed as follow:
 
 .. code-block:: bash
 
-    OUTPUT_CULEBRONT_CIRCULAR/
-    ├── SAMPLE-1
-    │   ├── AGGREGATED_QC
-    │   │   ├── DATA
-    │   │   ├── MAUVE_ALIGN
-    │   │   └── QUAST_RESULTS
-    │   ├── ASSEMBLERS
-    │   │   ├── CANU
-    │   │   │   ├── ASSEMBLER
-    │   │   │   ├── CORRECTION
-    │   │   │   ├── FIXSTART
-    │   │   │   ├── POLISHING
-    │   │   │   └── QUALITY
-    │   │   ├── FLYE
-    │   │   │   ├── ...
-    │   │   ├── MINIASM
-    │   │   │   ├── ...
-    │   │   ├── RAVEN
-    │   │   │   ├── ...
-    │   │   ├── SHASTA
-    │   │   │   ├── ...
-    │   │   └── SMARTDENOVO
-    │   │   │   ├── ...
-    │   ├── DIVERS
-    │   │   └── FASTQ2FASTA
-    │   ├── LOGS
-    │   └── REPORT
-    └── FINAL_REPORT
-    ├── SAMPLE-2 ...
+   OUTPUT_PODIUMASM/
+   ├── 1_FASTA_SORTED
+   |   ├── SAMPLE_1
+   |   ├── SAMPLE_2
+   |   ├── ...
+   ├── 2_GENOME_STATS
+   │   ├── BUSCO
+   │   │   ├── file_versions.tsv
+   │   │   ├── lineages
+   │   │   └── result_busco     
+   │   ├── COVERAGE
+   |       ├── SAMPLE_1
+   |       ├── SAMPLE_2
+   |       ├── ...
+   │   ├── QUAST
+   |       ├── REPORT_QUAST
+   │   ├── STAT_CSV
+   |       ├── SAMPLE_1
+   |       ├── SAMPLE_2
+   |       ├── ...
+   │   └── TAPESTRY
+   |       ├── SAMPLE_1
+   |       ├── SAMPLE_2
+   |       ├── ...
+   ├── 3_REPEATMASKER
+   │       ├── SAMPLE_1
+   |       ├── SAMPLE_2
+   |       ├── ...
+   ├── 4_STRUCTURAL_VAR
+   │   ├── csv_variants
+   │   ├── minimap2
+   │   └── sniffles
+   ├── 5_FINAL_FASTA
+   │       ├── SAMPLE_1
+   |       ├── SAMPLE_2
+   |       ├── ...   
+   ├── 6_MAPPING_ILLUMINA
+   │   ├── BWA_MEM
+   │   └── STATS
+   ├── 7_ALIGNMENTS
+   │       ├── SAMPLE_1
+   |       ├── SAMPLE_2
+   |       ├── ...
+   ├── LOGS
+   └── FINAL_REPORT
 
 
 Report
