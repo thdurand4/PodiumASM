@@ -10,7 +10,7 @@ Thanks
 
 Thanks to Florian Charriat (CIRAD) for his support.
 
-Thanks to "" for this beautiful logo 
+Thanks to Cécile Tria for this beautiful logo 
 
 License
 -------
