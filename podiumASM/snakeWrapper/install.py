@@ -135,7 +135,7 @@ def install_cluster(scheduler, env, bash_completion, create_envmodule, modules_d
 def install_local(bash_completion):
     """
     \b
-    Run installation for local computer downloading singularity images automatically.
+    Run installation for local computer.
     """
     # rm previous install (ie @julie cluster then local)
     clean_home()
