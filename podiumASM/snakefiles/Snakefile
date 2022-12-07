@@ -76,7 +76,7 @@ def get_fastq_file(wildcards):
         "R2": f"{short_read_dir}{split_wildcard[0]}_R2.fastq.gz"
     })
     # print(dico_mapping)
-    return dico_mapping
+    return dico_mapping 
 
 
 def get_fastq_file_long_read(wildcards):
@@ -92,20 +92,20 @@ def get_fastq_file_long_read(wildcards):
         "reads": f"{long_reads_dir}{split_wildcard[0]}.fastq.gz"
     })
     #print(dico_mapping)
-    return dico_mapping
+    return dico_mapping 
 
 
 # --- Main Build Rules --- #
 rule finale:
     input:
-        report_stat_final=f"{output_dir}/report.html"
+        report_stat_final=f"{output_dir}report.html"
 
 rule rename_contigs:
     threads: get_threads("rename_contigs",1)
     input:
         assembly=f"{fasta_dir}{{samples}}.fasta"
     output:
-        sorted_fasta=f"{output_dir}1_FASTA_SORTED/{{samples}}.fasta",
+        sorted_fasta=f"{output_dir}1_FASTA_SORTED/{{samples}}.fasta"
     log:
         error=f'{log_dir}fasta_sorted/fasta_sorted_{{samples}}.e',
         output=f'{log_dir}fasta_sorted/fasta_sorted_{{samples}}.o'
@@ -193,250 +193,252 @@ rule busco_figure:
         generate_plot.py -wd {output_dir}2_GENOME_STATS/BUSCO/result_busco/{params.folder}/) 1>{log.output} 2>{log.error}
         """
 
-rule bwa_index:
-    """make index with bwa for reference file"""
-    threads: get_threads("bwa_index",1)
-    input:
-        fasta=rules.rename_contigs.input.assembly
-    output:
-        expand(f'{fasta_dir}{{samples}}.fasta.{{suffix}}',samples="{samples}",suffix=BWA_INDEX)
-    log:
-        error=f'{log_dir}bwa_index/{{samples}}.e',
-        output=f'{log_dir}bwa_index/{{samples}}.o'
-    message:
-        f"""
-        Running {{rule}}
-        Input:
-            - Fasta: {{input.fasta}}
-        Output:
-            - sa_file: {{output}}
-        Others
-            - Threads: {{threads}}
-            - LOG error: {{log.error}}
-            - LOG output: {{log.output}}
+if config["OPTIONAL"]["ILLUMINA"] == "True":
+    rule bwa_index:
+        """make index with bwa for reference file"""
+        threads: get_threads("bwa_index",1)
+        input:
+            fasta=rules.rename_contigs.input.assembly
+        output:
+            expand(f'{fasta_dir}{{samples}}.fasta.{{suffix}}',samples="{samples}",suffix=BWA_INDEX)
+        log:
+            error=f'{log_dir}bwa_index/{{samples}}.e',
+            output=f'{log_dir}bwa_index/{{samples}}.o'
+        message:
+            f"""
+            Running {{rule}}
+            Input:
+                - Fasta: {{input.fasta}}
+            Output:
+                - sa_file: {{output}}
+            Others
+                - Threads: {{threads}}
+                - LOG error: {{log.error}}
+                - LOG output: {{log.output}}
+                """
+        envmodules:
+            tools_config["MODULES"]["BWA"]
+        shell:
             """
-    envmodules:
-        tools_config["MODULES"]["BWA"]
-    shell:
-        """
-        (bwa index {input.fasta}) 1>{log.output} 2>{log.error}
-        """
-
-rule bwa_mem_sort_bam:
-    """make bwa mem for all samples on reference"""
-    threads: get_threads('bwa_mem_sort_bam',1)
-    input:
-        unpack(get_fastq_file)
-    output:
-        bam_file=f"{output_dir}6_MAPPING_ILLUMINA/BWA_MEM/{{samples}}.bam"
-    params:
-        rg=f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
-        other_options_bwa=config["TOOLS_PARAM"]["BWA_MEM"],
-        other_options_samtools_view=config["TOOLS_PARAM"]["SAMTOOLS_VIEW"],
-        other_options_samtools_sort=config["TOOLS_PARAM"]["SAMTOOLS_SORT"]
-    log:
-        error=f'{log_dir}bwa_mem_sort_bam/{{samples}}.e',
-        output=f'{log_dir}bwa_mem_sort_bam/{{samples}}.o'
-    message:
-        f"""
-        Running {{rule}}
-        Input:
-            - Fasta: {{input.fasta}}
-            - R1: {{input.R1}}
-            - R2: {{input.R2}}
-        Output:
-            - Bam: {{output.bam_file}}
-        Params:
-            - other_options_bwa: {{params.other_options_bwa}}
-            - other_options_samtools_view: {{params.other_options_samtools_view}}
-            - other_options_samtools_sort: {{params.other_options_samtools_sort}}
-        Others
-            - Threads: {{threads}}
-            - LOG error: {{log.error}}
-            - LOG output: {{log.output}}
-        """
-    envmodules:
-        tools_config["MODULES"]["BWA"],
-        tools_config["MODULES"]["SAMTOOLS"]
-    shell:
-        """
-        (bwa mem -t {threads} {input.fasta} {input.R1} {input.R2} -R '{params.rg}' |
-        samtools view -@ {threads} {params.other_options_samtools_view} |
-        samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file} ) 1>{log.output} 2>{log.error}
-        """
-
-rule samtools_index_illumina:
-    """index bam for use stats"""
-    threads: get_threads('samtools_index',1)
-    input:
-        bam=rules.bwa_mem_sort_bam.output.bam_file
-    output:
-        bai=f"{output_dir}6_MAPPING_ILLUMINA/BWA_MEM/{{samples}}.bam.bai"
-    log:
-        error=f'{log_dir}samtools_index/{{samples}}.e',
-        output=f'{log_dir}samtools_index/{{samples}}.o'
-    message:
-        f"""
-        Running {{rule}}
-        Input:
-            - Bam: {{input.bam}}
-        Output:
-            - Bai: {{output.bai}}
-        Others
-            - Threads: {{threads}}
-            - LOG error: {{log.error}}
-            - LOG output: {{log.output}}
+            (bwa index {input.fasta}) 1>{log.output} 2>{log.error}
             """
-    envmodules:
-        tools_config["MODULES"]["SAMTOOLS"]
-    shell:
-        """
-        (samtools index -@ {threads} {input.bam}) 1>{log.output} 2>{log.error}
-        """
 
-####### Stats
 
-rule samtools_idxstats:
-    """apply samtools idxstats on all bam"""
-    threads: get_threads('samtools_idxstats',1)
-    input:
-        bam=rules.samtools_index_illumina.input.bam
-    #bai = rules.samtools_index.output.bai
-    output:
-        txt_file=f"{output_dir}6_MAPPING_ILLUMINA/STATS/idxstats/{{samples}}_IDXSTATS.txt"
-    log:
-        error=f'{log_dir}samtools_idxstats/{{samples}}.e',
-        output=f'{log_dir}samtools_idxstats/{{samples}}.o'
-    message:
-        f"""
-        Running {{rule}} for
+    rule bwa_mem_sort_bam:
+        """make bwa mem for all samples on reference"""
+        threads: get_threads('bwa_mem_sort_bam',1)
+        input:
+            unpack(get_fastq_file)
+        output:
+            bam_file=f"{output_dir}6_MAPPING_ILLUMINA/BWA_MEM/{{samples}}.bam"
+        params:
+            rg=f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
+            other_options_bwa=config["TOOLS_PARAM"]["BWA_MEM"],
+            other_options_samtools_view=config["TOOLS_PARAM"]["SAMTOOLS_VIEW"],
+            other_options_samtools_sort=config["TOOLS_PARAM"]["SAMTOOLS_SORT"]
+        log:
+            error=f'{log_dir}bwa_mem_sort_bam/{{samples}}.e',
+            output=f'{log_dir}bwa_mem_sort_bam/{{samples}}.o'
+        message:
+            f"""
+            Running {{rule}}
         Input:
-            - Bam: {{input.bam}}
-        Output:
-            - txt: {{output.txt_file}}
-        Others
-            - Threads: {{threads}}
-            - LOG error: {{log.error}}
-            - LOG output: {{log.output}}
-        """
-    envmodules:
-        tools_config["MODULES"]["SAMTOOLS"]
-    shell:
-        """
-        (samtools idxstats -@ {threads} {input.bam} | tee {output.txt_file}) 1>{log.output} 2>{log.error}
-        """
+                - Fasta: {{input.fasta}}
+                - R1: {{input.R1}}
+                - R2: {{input.R2}}
+            Output:
+                - Bam: {{output.bam_file}}
+            Params:
+                - other_options_bwa: {{params.other_options_bwa}}
+                - other_options_samtools_view: {{params.other_options_samtools_view}}
+                - other_options_samtools_sort: {{params.other_options_samtools_sort}}
+            Others
+                - Threads: {{threads}}
+                - LOG error: {{log.error}}
+                - LOG output: {{log.output}}
+            """
+        envmodules:
+            tools_config["MODULES"]["BWA"],
+            tools_config["MODULES"]["SAMTOOLS"]
+        shell:
+            """
+            (bwa mem -t {threads} {input.fasta} {input.R1} {input.R2} -R '{params.rg}' |
+            samtools view -@ {threads} {params.other_options_samtools_view} |
+            samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file} ) 1>{log.output} 2>{log.error}
+            """
 
-rule merge_idxstats:
-    """merge all samtools idxstats files"""
-    threads: get_threads('merge_idxstats',1)
-    input:
-        csv_resume=expand(rules.samtools_idxstats.output.txt_file,samples=ASSEMBLIES)
-    output:
-        csv_resume_merge=report(f"{output_dir}6_MAPPING_ILLUMINA/STATS/all_mapping_stats_resume.csv",category="Resume mapping info's")
-    log:
-        error=f'{log_dir}merge_idxstats/all_mapping_stats_resume.e',
-        output=f'{log_dir}merge_idxstats/all_mapping_stats_resume.o'
-    message:
-        f"""
-        Running {{rule}} for
-        Input:
-            - CSV_files: {{input.csv_resume}}
-        Output:
-            - Merge CSV: {{output.csv_resume_merge}}
-        Others
-            - Threads: {{threads}}
-            - LOG error: {{log.error}}
-            - LOG output: {{log.output}}
-        """
-    run:
-        parse_idxstats(input.csv_resume,output.csv_resume_merge,sep="\t")
+    rule samtools_index_illumina:
+        """index bam for use stats"""
+        threads: get_threads('samtools_index',1)
+        input:
+            bam=rules.bwa_mem_sort_bam.output.bam_file
+        output:
+            bai=f"{output_dir}6_MAPPING_ILLUMINA/BWA_MEM/{{samples}}.bam.bai"
+        log:
+            error=f'{log_dir}samtools_index/{{samples}}.e',
+            output=f'{log_dir}samtools_index/{{samples}}.o'
+        message:
+            f"""
+            Running {{rule}}
+            Input:
+                - Bam: {{input.bam}}
+            Output:
+                - Bai: {{output.bai}}
+            Others
+                - Threads: {{threads}}
+                - LOG error: {{log.error}}
+                - LOG output: {{log.output}}
+                """
+        envmodules:
+            tools_config["MODULES"]["SAMTOOLS"]
+        shell:
+            """
+            (samtools index -@ {threads} {input.bam}) 1>{log.output} 2>{log.error}
+            """
 
-rule samtools_depth:
-    """apply samtools depth on all bam SE end PE"""
-    threads: get_threads('samtools_depth',1)
-    input:
-        bam=rules.samtools_index_illumina.input.bam
-    #bai = rules.samtools_index.output.bai
-    output:
-        txt_file=f"{output_dir}6_MAPPING_ILLUMINA/STATS/depth/{{samples}}_DEPTH.txt"
-    params:
-        other_options=config["TOOLS_PARAM"]["SAMTOOLS_DEPTH"]
-    log:
-        error=f'{log_dir}samtools_depth/{{samples}}.e',
-        output=f'{log_dir}samtools_depth/{{samples}}.o'
-    message:
-        f"""
-        Execute {{rule}} for
-        Input:
-            - Bam: {{input.bam}}
-        Output:
-            - txt: {{output.txt_file}}
-        Others
-            - Threads: {{threads}}
-            - LOG error: {{log.error}}
-            - LOG output: {{log.output}}
-        """
-    envmodules:
-        tools_config["MODULES"]["SAMTOOLS"]
-    shell:
-        """
-        (samtools depth -@ {threads} {params.other_options} {input.bam} | tee {output.txt_file}) 1>{log.output} 2>{log.error}
-        """
+    ####### Stats
+
+    rule samtools_idxstats:
+        """apply samtools idxstats on all bam"""
+        threads: get_threads('samtools_idxstats',1)
+        input:
+            bam=rules.samtools_index_illumina.input.bam
+        #bai = rules.samtools_index.output.bai
+        output:
+            txt_file=f"{output_dir}6_MAPPING_ILLUMINA/STATS/idxstats/{{samples}}_IDXSTATS.txt"
+        log:
+            error=f'{log_dir}samtools_idxstats/{{samples}}.e',
+            output=f'{log_dir}samtools_idxstats/{{samples}}.o'
+        message:
+            f"""
+            Running {{rule}} for
+            Input:
+                - Bam: {{input.bam}}
+            Output:
+                - txt: {{output.txt_file}}
+            Others
+                - Threads: {{threads}}
+                - LOG error: {{log.error}}
+                - LOG output: {{log.output}}
+            """
+        envmodules:
+            tools_config["MODULES"]["SAMTOOLS"]
+        shell:
+            """
+            (samtools idxstats -@ {threads} {input.bam} | tee {output.txt_file}) 1>{log.output} 2>{log.error}
+            """
+
+    rule merge_idxstats:
+        """merge all samtools idxstats files"""
+        threads: get_threads('merge_idxstats',1)
+        input:
+            csv_resume=expand(rules.samtools_idxstats.output.txt_file,samples=ASSEMBLIES)
+        output:
+            csv_resume_merge=report(f"{output_dir}6_MAPPING_ILLUMINA/STATS/all_mapping_stats_resume.csv",category="Resume mapping info's")
+        log:
+            error=f'{log_dir}merge_idxstats/all_mapping_stats_resume.e',
+            output=f'{log_dir}merge_idxstats/all_mapping_stats_resume.o'
+        message:
+            f"""
+            Running {{rule}} for
+            Input:
+                - CSV_files: {{input.csv_resume}}
+            Output:
+                - Merge CSV: {{output.csv_resume_merge}}
+            Others
+                - Threads: {{threads}}
+                - LOG error: {{log.error}}
+                - LOG output: {{log.output}}
+            """
+        run:
+            parse_idxstats(input.csv_resume,output.csv_resume_merge,sep="\t")
+
+    rule samtools_depth:
+        """apply samtools depth on all bam SE end PE"""
+        threads: get_threads('samtools_depth',1)
+        input:
+            bam=rules.samtools_index_illumina.input.bam
+        #bai = rules.samtools_index.output.bai
+        output:
+            txt_file=f"{output_dir}6_MAPPING_ILLUMINA/STATS/depth/{{samples}}_DEPTH.txt"
+        params:
+            other_options=config["TOOLS_PARAM"]["SAMTOOLS_DEPTH"]
+        log:
+            error=f'{log_dir}samtools_depth/{{samples}}.e',
+            output=f'{log_dir}samtools_depth/{{samples}}.o'
+        message:
+            f"""
+            Execute {{rule}} for
+            Input:
+                - Bam: {{input.bam}}
+            Output:
+                - txt: {{output.txt_file}}
+            Others
+                - Threads: {{threads}}
+                - LOG error: {{log.error}}
+                - LOG output: {{log.output}}
+            """
+        envmodules:
+            tools_config["MODULES"]["SAMTOOLS"]
+        shell:
+            """
+            (samtools depth -@ {threads} {params.other_options} {input.bam} | tee {output.txt_file}) 1>{log.output} 2>{log.error}
+            """
 
 
-rule samtools_depth_to_csv:
-    """build csv with mean depth, median depth and mean coverage for all bam"""
-    threads : get_threads('samtools_depth_to_csv', 1)
-    input :
-        bam = rules.samtools_index_illumina.input.bam,
-        bai = rules.samtools_index_illumina.output.bai,
-        txt = rules.samtools_depth.output.txt_file,
-        ref = f"{fasta_dir}{{samples}}.fasta"
-    output :
-        csv_resume = f'{output_dir}6_MAPPING_ILLUMINA/STATS/depth/{{samples}}.csv'
-    log:
-        error =  f'{log_dir}samtools_depth_to_csv/{{samples}}.e',
-        output = f'{log_dir}samtools_depth_to_csv/{{samples}}.o'
-    message:
-        f"""
-        Running {{rule}}
-        Input:
-            - reference : {{input.ref}}
-            - txt : {{input.txt}}
-        Output:
-            - CSV : temp({{output.csv_resume}})
-        Others
-            - Threads : {{threads}}
-            - LOG error: {{log.error}}
-            - LOG output: {{log.output}}
-        """
-    run :
-        check_mapping_stats(input.ref, input.txt, output.csv_resume, sep="\t")
+    rule samtools_depth_to_csv:
+        """build csv with mean depth, median depth and mean coverage for all bam"""
+        threads : get_threads('samtools_depth_to_csv', 1)
+        input :
+            bam = rules.samtools_index_illumina.input.bam,
+            bai = rules.samtools_index_illumina.output.bai,
+            txt = rules.samtools_depth.output.txt_file,
+            ref = f"{fasta_dir}{{samples}}.fasta"
+        output :
+            csv_resume = f'{output_dir}6_MAPPING_ILLUMINA/STATS/depth/{{samples}}.csv'
+        log:
+            error =  f'{log_dir}samtools_depth_to_csv/{{samples}}.e',
+            output = f'{log_dir}samtools_depth_to_csv/{{samples}}.o'
+        message:
+            f"""
+            Running {{rule}}
+            Input:
+                - reference : {{input.ref}}
+                - txt : {{input.txt}}
+            Output:
+                - CSV : temp({{output.csv_resume}})
+            Others
+                - Threads : {{threads}}
+                - LOG error: {{log.error}}
+                - LOG output: {{log.output}}
+            """
+        run :
+            check_mapping_stats(input.ref, input.txt, output.csv_resume, sep="\t")
 
-rule merge_samtools_depth_stats:
-    """merge all bam_stats_to_csv files"""
-    threads: get_threads('merge_samtools_depth_stats',1)
-    input:
-        csv_resume=expand(rules.samtools_depth_to_csv.output.csv_resume,samples=ASSEMBLIES)
-    output:
-        csv_resume_merge=report(f"{output_dir}6_MAPPING_ILLUMINA/STATS/all_mapping_stats_Depth_resume.csv",category="Resume mapping info's")
-    log:
-        error=f'{log_dir}merge_samtools_depth_stats/mergeResume.e',
-        output=f'{log_dir}merge_samtools_depth_stats/mergeResume.o'
-    message:
-        f"""
-        Running {{rule}}
-        Input:
-            - CSV list: {{input.csv_resume}}
-        Output:
-            - CSV: {{output.csv_resume_merge}}
-        Others
-            - Threads: {{threads}}
-            - LOG error: {{log.error}}
-            - LOG output: {{log.output}}
-        """
-    run:
-        merge_samtools_depth_csv(input.csv_resume,output.csv_resume_merge,sep="\t")
+    rule merge_samtools_depth_stats:
+        """merge all bam_stats_to_csv files"""
+        threads: get_threads('merge_samtools_depth_stats',1)
+        input:
+            csv_resume=expand(rules.samtools_depth_to_csv.output.csv_resume,samples=ASSEMBLIES)
+        output:
+            csv_resume_merge=report(f"{output_dir}6_MAPPING_ILLUMINA/STATS/all_mapping_stats_Depth_resume.csv",category="Resume mapping info's")
+        log:
+            error=f'{log_dir}merge_samtools_depth_stats/mergeResume.e',
+            output=f'{log_dir}merge_samtools_depth_stats/mergeResume.o'
+        message:
+            f"""
+            Running {{rule}}
+            Input:
+                - CSV list: {{input.csv_resume}}
+            Output:
+                - CSV: {{output.csv_resume_merge}}
+            Others
+                - Threads: {{threads}}
+                - LOG error: {{log.error}}
+                - LOG output: {{log.output}}
+            """
+        run:
+            merge_samtools_depth_csv(input.csv_resume,output.csv_resume_merge,sep="\t")
 
 
 rule quast_full_contigs:
@@ -721,7 +723,7 @@ rule repeatmasker:
             - LOG output: {{log.output}}
         """
     envmodules:
-        tools_config["MODULES"]["REPEATMASKER"],
+        tools_config["MODULES"]["REPEATMASKER"]
     shell:
         "(RepeatMasker -lib {input.lib_file} {params.other_option_RM} {input.fasta_file} -dir {params.directory}) 1>{log.output} 2>{log.error}"
 
@@ -781,7 +783,7 @@ rule mummer:
         error=f'{log_dir}mummer/mummer_{{samples}}.e',
         output=f'{log_dir}mummer/mummer_{{samples}}.o'
     envmodules:
-        tools_config["MODULES"]["MUMMER4"],
+        tools_config["MODULES"]["MUMMER4"]
     shell:
         """
         nucmer --delta {output.delta} {params.option_nucmer} {input.reference_file} {input.final_files} 1>{log.output} 2>{log.error}
@@ -813,7 +815,7 @@ rule assemblytics:
         error=f'{log_dir}assemblytics/assemblytics_{{samples}}.e',
         output=f'{log_dir}assemblytics/assemblytics_{{samples}}.o'
     envmodules:
-        tools_config["MODULES"]["ASSEMBLYTICS"],
+        tools_config["MODULES"]["ASSEMBLYTICS"]
     shell:
         """
         (Assemblytics {input.delta} {params.prefix} {params.option_assemblytics}
@@ -896,12 +898,12 @@ rule report_stats_contig:
         figure_busco=rules.busco_figure.output.figure,
         quast=rules.quast_full_contigs.output.quast_results,
         dotplot_final=expand(rules.assemblytics.output.dotplot,samples=ASSEMBLIES),
-        depth_resume=rules.merge_samtools_depth_stats.output.csv_resume_merge,
-        idxstats_resume=rules.merge_idxstats.output.csv_resume_merge,
+        depth_resume=rules.merge_samtools_depth_stats.output.csv_resume_merge if config["OPTIONAL"]["ILLUMINA"] == "True" else [],
+        idxstats_resume=rules.merge_idxstats.output.csv_resume_merge if config["OPTIONAL"]["ILLUMINA"] == "True" else [],
         tapestry_out=expand(rules.tapestry.output.tapestry_report,samples=ASSEMBLIES),
         csv_var_per_contig=expand(rules.variant_per_contig.output.csv_var_per_contig,samples=ASSEMBLIES)
     output:
-        report=f"{output_dir}/report.html"
+        report=f"{output_dir}report.html"
     params:
         csv_all_dir=f"{output_dir}2_GENOME_STATS/STAT_CSV",
         csv_struct_dir=f"{output_dir}4_STRUCTURAL_VAR/csv_variants",

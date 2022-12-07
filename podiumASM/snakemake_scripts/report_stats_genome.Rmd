@@ -51,11 +51,14 @@ file.quality = paste0(snakemake@params$csv_all_dir,"/")
 csv_dir_snakemake = paste0(snakemake@params$csv_all_dir,"/")
 csv_files = list.files(csv_dir_snakemake)
 idxstat_resume <- snakemake@input$idxstats_resume
-table_idxstat <- read.table(file=idxstat_resume, sep="\t", header=TRUE)
+if(!is.null(idxstat_resume)){
+    table_idxstat <- read.table(file=idxstat_resume, sep="\t", header=TRUE)
+}
+
 depth_resume <- snakemake@input$depth_resume
-datatableDepth <- read.table(file=depth_resume, sep="\t", header=TRUE)
-
-
+if(!is.null(depth_resume)){
+    datatableDepth <- read.table(file=depth_resume, sep="\t", header=TRUE)
+}
 ```
 
 
@@ -101,7 +104,8 @@ cat(paste(knit(text = toto,quiet=T), collapse = '\n'))
 ```{r, Generation figure busco R, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
 figure_busco =snakemake@input$figure_busco
-knitr::include_graphics(figure_busco)
+knitr::include_graphics(figure_busco, error = FALSE)
+
 
 ```
 
@@ -151,6 +155,8 @@ cat(paste(knit(text = sv,quiet=T), collapse = '\n'))
 # Library size / mapped{.tabset .tabset-fade}
 
 ```{r Visualisation des taille de librairie, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+if(!is.null(idxstat_resume)){
 DT::datatable(table_idxstat, caption =" Tableau n°1: Tableau des statistiques de taille des librairies et pourcentage de mapping",
               rownames = NULL,
               escape = FALSE,
@@ -163,12 +169,14 @@ DT::datatable(table_idxstat, caption =" Tableau n°1: Tableau des statistiques d
                          buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
                          )
               )
+             }
 ```
 
 
 # Stats mapped reads
 
 ```{r Visualisation of Depth, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+if(!is.null(depth_resume)){
 datatable(datatableDepth, caption =" Tableau n°1: Tableau de mapping",
           colnames = colnames(datatableDepth),
           rownames = NULL,
@@ -178,6 +186,7 @@ datatable(datatableDepth, caption =" Tableau n°1: Tableau de mapping",
         )
        #%>%
       #formatStyle(TRUE,valueColumns ='poucent',color = 'black',font ='bold',background = styleInterval(c(0,25000), c('white','red','white')))
+}
 ```
 
 <footer>
