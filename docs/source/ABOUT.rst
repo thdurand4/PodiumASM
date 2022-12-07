@@ -38,18 +38,22 @@ PodiumASM checks the quality of the assemblies with using these tools:
    * BUSCO: helps to check if you have a good assembly, by searching the expected single-copy lineage-conserved orthologs in any newly sequenced genome from an appropriate phylogenetic clade.
    * QUAST: a good starting point to evaluate the quality of assemblies, provides many helpful contiguity statistics and metrics.
    * TAPESTRY: allows to detect telomere on assembled contigs.
+   * MUMMER : Use to align reference between assembly. Usefull for assemblytics tool
    * Assemblytics: compares structural variations of assemblies versus a reference genome
    * MINIMAP2: allow mapping of refference genome against long_read of organism
    * Sniffle : descriptive information about the number of structural variation on the assembly
+   * R : Is use for the draw the report
 
 Included tools :
 
-* BUSCO version >= 4.0.5
+* BUSCO version >= 5.1.2
 * QUAST version >= 5.0.2
-* TAPESTRY version >= 1.1.1
-* Assemblytics version >= 1.2
-* MINIMAP2 version >= 1.2
-* Sniffle version>= 1.10
+* TAPESTRY 
+* MUMMER version >= 4.0.0
+* Assemblytics version >= 1.2.1
+* MINIMAP2 version >= 2.18
+* Sniffle : python versions >= 3.7
+* R version >= 3.6.3
 
 Optional ILLUMINA step
 ......................
@@ -67,5 +71,14 @@ and activated ILLUMINA step on configuration file (ILLUMINA=True):
 .. image:: _images/PodiumASM_illumina.png
    :target: _images/PodiumASM_illumina.png
    :alt: ILLUMINA_TRUE
+   
+   
+   
+.. note::
+   * ILLUMINA : this rule will calculates remapping stats using Illumina reads over assemblies
+   
+   
+Included tools :
 
-ILLUMINA rule will calculates remapping stats using Illumina reads over assemblies
+* SAMTOOLS version >= 1.15.1
+* BWA version >= 0.7.17
